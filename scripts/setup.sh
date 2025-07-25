@@ -108,8 +108,6 @@ apt install -y \
     build-essential \
     python3 \
     python3-pip \
-    nodejs \
-    npm \
     vim \
     nano \
     htop \
@@ -119,11 +117,18 @@ apt install -y \
     ca-certificates \
     gnupg \
     lsb-release \
-    software-properties-common
+    software-properties-common || {
+    echo -e "${YELLOW}[WARNING]${NC} 일부 패키지 설치 실패, 계속 진행..."
+}
 
 # Node.js 최신 버전 설치
 echo -e "${BLUE}[INFO]${NC} Node.js 최신 버전 설치 중..."
-curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+# 기존 Node.js 제거 (충돌 방지)
+apt remove -y nodejs npm 2>/dev/null || true
+apt autoremove -y
+
+# Node.js 18 LTS 설치 (더 안정적)
+curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
 apt install -y nodejs
 
 # npm 최신 버전으로 업데이트
@@ -157,13 +162,19 @@ apt install -y \
     libxrandr2 \
     libxtst6 \
     libnss3 \
-    libcups2 \
+    libcups2t64 \
     libdrm2 \
     libxkbcommon0 \
-    libatspi2.0-0 \
-    libgtk-3-0 \
+    libatspi2.0-0t64 \
+    libgtk-3-0t64 \
     libgbm1 \
-    libasound2
+    libasound2t64 || {
+    echo -e "${YELLOW}[WARNING]${NC} 일부 X11 패키지 설치 실패, 대체 패키지 시도..."
+    # 대체 패키지 설치
+    apt install -y libcups2 libatspi2.0-0 libgtk-3-0 libasound2 2>/dev/null || {
+        echo -e "${YELLOW}[WARNING]${NC} X11 패키지 설치 실패, 기본 기능으로 진행..."
+    }
+}
 
 # 작업 디렉토리 생성
 mkdir -p /home/cursor-ide
