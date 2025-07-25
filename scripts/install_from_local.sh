@@ -78,20 +78,46 @@ check_local_appimage() {
     fi
 }
 
+# 사용자 권한 확인
+check_user_permissions() {
+    log_info "사용자 권한 확인 중..."
+    
+    # root 사용자 확인
+    if [ "$(id -u)" -eq 0 ]; then
+        log_error "root 사용자로 실행할 수 없습니다."
+        echo ""
+        echo "해결 방법:"
+        echo "1. 일반 사용자로 다시 로그인하세요"
+        echo "2. 또는 다음 명령어로 일반 사용자로 전환하세요:"
+        echo "   su - [사용자명]"
+        echo ""
+        echo "현재 사용자: $(whoami)"
+        echo "현재 UID: $(id -u)"
+        exit 1
+    fi
+    
+    # proot-distro 확인
+    if ! command -v proot-distro &> /dev/null; then
+        log_error "proot-distro가 설치되지 않았습니다."
+        log_info "다음 명령어로 설치하세요:"
+        echo "pkg install proot-distro"
+        exit 1
+    fi
+    
+    # Termux 환경 확인
+    if [ -z "$TERMUX_VERSION" ]; then
+        log_warning "Termux 환경이 아닙니다. 일부 기능이 제한될 수 있습니다."
+    fi
+    
+    log_success "사용자 권한 확인 완료"
+}
+
 # Ubuntu 환경 확인 및 설치
 check_ubuntu_environment() {
     log_info "Ubuntu 환경 확인 중..."
     
     if [ ! -d "$HOME/ubuntu" ]; then
         log_warning "Ubuntu 환경이 없습니다. 설치를 진행합니다."
-        
-        # proot-distro 확인
-        if ! command -v proot-distro &> /dev/null; then
-            log_error "proot-distro가 설치되지 않았습니다."
-            log_info "다음 명령어로 설치하세요:"
-            echo "pkg install proot-distro"
-            exit 1
-        fi
         
         # Ubuntu 설치
         log_info "Ubuntu 22.04 LTS 설치 중..."
@@ -319,6 +345,9 @@ main() {
     echo "=========================================="
     echo ""
     
+    # 사용자 권한 확인
+    check_user_permissions
+
     # 로컬 AppImage 파일 확인
     local appimage_path=$(check_local_appimage)
     if [ $? -ne 0 ]; then
