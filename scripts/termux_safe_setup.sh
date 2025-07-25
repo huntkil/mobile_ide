@@ -313,12 +313,50 @@ apt install -y curl wget git build-essential python3 python3-pip
 # X11 관련 패키지
 apt install -y xvfb x11-apps x11-utils x11-xserver-utils dbus-x11
 
-# 추가 라이브러리
+# 추가 라이브러리 (Termux Ubuntu 환경에 맞게 수정)
+echo -e "${BLUE}[INFO]${NC} X11 라이브러리 설치 중..."
+
+# 기본 X11 라이브러리
 apt install -y libx11-6 libxext6 libxrender1 libxtst6 libxi6
 apt install -y libxrandr2 libxss1 libxcb1 libxcomposite1
 apt install -y libxcursor1 libxdamage1 libxfixes3 libxinerama1
 apt install -y libnss3 libcups2 libdrm2 libxkbcommon0
-apt install -y libatspi2.0-0 libgtk-3-0 libgbm1 libasound2
+
+# Termux Ubuntu 환경용 패키지 (t64 접미사 포함)
+echo -e "${BLUE}[INFO]${NC} Termux 전용 라이브러리 설치 중..."
+
+# libatspi2.0-0 대신 libatspi2.0-0t64 사용
+apt install -y libatspi2.0-0t64 || {
+    echo -e "${YELLOW}[WARNING]${NC} libatspi2.0-0t64 설치 실패, 기본 버전 시도..."
+    apt install -y libatspi2.0-0 || true
+}
+
+# libgtk-3-0 대신 libgtk-3-0t64 사용
+apt install -y libgtk-3-0t64 || {
+    echo -e "${YELLOW}[WARNING]${NC} libgtk-3-0t64 설치 실패, 기본 버전 시도..."
+    apt install -y libgtk-3-0 || true
+}
+
+# libgbm1 설치
+apt install -y libgbm1 || {
+    echo -e "${YELLOW}[WARNING]${NC} libgbm1 설치 실패, 건너뜀..."
+}
+
+# libasound2 대신 libasound2t64 사용
+apt install -y libasound2t64 || {
+    echo -e "${YELLOW}[WARNING]${NC} libasound2t64 설치 실패, 기본 버전 시도..."
+    apt install -y libasound2 || {
+        echo -e "${YELLOW}[WARNING]${NC} libasound2도 설치 실패, 건너뜀..."
+    }
+}
+
+# 추가 의존성 패키지들
+echo -e "${BLUE}[INFO]${NC} 추가 의존성 패키지 설치 중..."
+
+# 일반적인 개발 라이브러리들
+apt install -y libglib2.0-0 libpango-1.0-0 libcairo2 libgdk-pixbuf2.0-0 || {
+    echo -e "${YELLOW}[WARNING]${NC} 일부 GTK 의존성 설치 실패, 계속 진행..."
+}
 
 # Node.js 18 LTS 설치
 echo -e "${BLUE}[INFO]${NC} Node.js 18 LTS 설치 중..."
