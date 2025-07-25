@@ -183,7 +183,7 @@ curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
 apt install -y nodejs
 
 # npm 호환성 문제 해결
-echo -e "${BLUE}[INFO]${NC} npm 호환성 문제 해결 중...
+echo -e "${BLUE}[INFO]${NC} npm 호환성 문제 해결 중..."
 npm install -g npm@10.8.2 || {
     echo -e "${YELLOW}[WARNING]${NC} npm 버전 변경 실패, 기본 버전 사용..."
 }
