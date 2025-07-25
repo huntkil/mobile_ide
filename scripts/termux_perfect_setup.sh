@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Galaxy Android용 Cursor AI IDE 완벽 설치 스크립트
+# Galaxy Android용 Cursor AI IDE 완벽 설치 스크립트 (Termux 최적화)
 # Author: Mobile IDE Team
-# Version: 2.0.0 - 완벽 버전
+# Version: 2.1.0 - Termux 최적화 버전
 # 모든 오류 상황을 처리하고 중단 없이 완료
 
-# 에러 처리 설정
-set -euo pipefail
-trap 'error_handler $? $LINENO $BASH_LINENO "$BASH_COMMAND" $(printf "::%s" ${FUNCNAME[@]:-})' ERR
+# 에러 처리 설정 (Termux 호환)
+set -e
+trap 'error_handler $? $LINENO "$BASH_COMMAND"' ERR
 
 # 색상 정의
 RED='\033[0;31m'
@@ -18,12 +18,8 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-# 전역 변수 - BASH_SOURCE 문제 해결
+# 전역 변수 (Termux 안전 버전)
 SCRIPT_DIR="$(pwd)"
-if [[ "${BASH_SOURCE[0]:-}" != "" ]]; then
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || pwd)"
-fi
-
 LOG_FILE="/tmp/cursor_install_$(date +%Y%m%d_%H%M%S).log"
 BACKUP_DIR="$HOME/cursor_backup_$(date +%Y%m%d_%H%M%S)"
 CURSOR_DIR="$HOME/cursor-ide"
@@ -58,19 +54,16 @@ log_step() {
     echo -e "${PURPLE}[STEP $INSTALL_STEPS/$TOTAL_STEPS]${NC} $message" | tee -a "$LOG_FILE"
 }
 
-# 에러 핸들러
+# 에러 핸들러 (Termux 호환)
 error_handler() {
     local exit_code=$1
     local line_no=$2
-    local bash_lineno=$3
-    local last_command="$4"
-    local func_stack="$5"
+    local last_command="$3"
     
     log_error "스크립트 실행 중 오류 발생!"
     log_error "Exit Code: $exit_code"
     log_error "Line Number: $line_no"
     log_error "Command: $last_command"
-    log_error "Function Stack: $func_stack"
     
     echo ""
     echo "🔧 자동 복구를 시도합니다..."
@@ -79,7 +72,7 @@ error_handler() {
     echo ""
     echo "📋 문제 해결 방법:"
     echo "1. 로그 파일 확인: $LOG_FILE"
-    echo "2. 수동 복구 실행: ./restore.sh"
+    echo "2. 수동 복구 실행: ./termux_perfect_restore.sh"
     echo "3. 네트워크 연결 확인"
     echo "4. 저장공간 확인: df -h"
     echo "5. 메모리 확인: free -h"
@@ -615,7 +608,7 @@ show_completion_message() {
     echo ""
     echo "🔧 문제 해결:"
     echo "  로그 파일 확인: $LOG_FILE"
-    echo "  복구 스크립트: ./restore.sh"
+    echo "  복구 스크립트: ./termux_perfect_restore.sh"
     echo ""
     echo "📱 모바일 사용 팁:"
     echo "  - 터치 제스처로 확대/축소"
@@ -634,8 +627,8 @@ show_completion_message() {
 # 메인 실행 함수
 main() {
     echo ""
-    echo "🚀 Galaxy Android용 Cursor AI IDE 완벽 설치 스크립트"
-    echo "=================================================="
+    echo "🚀 Galaxy Android용 Cursor AI IDE 완벽 설치 스크립트 (Termux 최적화)"
+    echo "=================================================================="
     echo ""
     
     # 로그 파일 초기화
