@@ -1,0 +1,235 @@
+{
+    "window": {
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "maximizable": true,
+        "fullscreenable": true,
+        "zoomLevel": 0,
+        "titleBarStyle": "default"
+    },
+    "editor": {
+        "fontSize": 14,
+        "fontFamily": "Monaco, 'Courier New', monospace",
+        "lineHeight": 1.5,
+        "wordWrap": "on",
+        "minimap": {
+            "enabled": false
+        },
+        "scrollBeyondLastLine": false,
+        "smoothScrolling": true,
+        "cursorBlinking": "smooth",
+        "cursorSmoothCaretAnimation": "on",
+        "renderWhitespace": "none",
+        "renderControlCharacters": false,
+        "renderLineHighlight": "line",
+        "folding": true,
+        "foldingStrategy": "auto",
+        "showFoldingControls": "mouseover",
+        "unfoldOnClickAfterEnd": false,
+        "links": false,
+        "colorDecorators": false,
+        "lightbulb": {
+            "enabled": false
+        },
+        "codeActionsOnSave": {},
+        "formatOnSave": false,
+        "formatOnPaste": false,
+        "formatOnType": false,
+        "suggestOnTriggerCharacters": false,
+        "acceptSuggestionOnCommitCharacter": false,
+        "acceptSuggestionOnEnter": "on",
+        "tabCompletion": "off",
+        "wordBasedSuggestions": false,
+        "parameterHints": {
+            "enabled": false
+        },
+        "autoIndent": "full",
+        "detectIndentation": false,
+        "insertSpaces": true,
+        "tabSize": 2,
+        "useTabStops": false,
+        "trimAutoWhitespace": true,
+        "largeFileOptimizations": true,
+        "maxTokenizationLineLength": 20000,
+        "semanticValidation": false,
+        "bracketPairColorization": {
+            "enabled": false
+        },
+        "guides": {
+            "bracketPairs": false,
+            "indentation": false,
+            "highlightActiveIndentation": false
+        }
+    },
+    "workbench": {
+        "colorTheme": "Default Dark+",
+        "iconTheme": "vs-seti",
+        "sideBar": {
+            "location": "left",
+            "visible": true
+        },
+        "panel": {
+            "defaultLocation": "bottom",
+            "visible": false
+        },
+        "tree": {
+            "indent": 20,
+            "renderIndentGuides": "none"
+        },
+        "editor": {
+            "showTabs": "singleClick",
+            "tabSizing": "shrink",
+            "tabCloseButton": "right",
+            "tabSizingFixedMinWidth": 100,
+            "tabSizingFixedMaxWidth": 200
+        },
+        "activityBar": {
+            "visible": false
+        },
+        "statusBar": {
+            "visible": true
+        },
+        "menuBar": {
+            "visible": false
+        },
+        "toolbar": {
+            "visible": false
+        },
+        "breadcrumbs": {
+            "enabled": false
+        }
+    },
+    "terminal": {
+        "integrated": {
+            "fontSize": 12,
+            "fontFamily": "Monaco, 'Courier New', monospace",
+            "lineHeight": 1.2,
+            "cursorBlinking": true,
+            "cursorStyle": "line",
+            "scrollback": 1000,
+            "fastScrollSensitivity": 5,
+            "mouseWheelScrollSensitivity": 1
+        }
+    },
+    "files": {
+        "autoSave": "afterDelay",
+        "autoSaveDelay": 2000,
+        "exclude": {
+            "**/node_modules": true,
+            "**/dist": true,
+            "**/build": true,
+            "**/.git": true,
+            "**/.vscode": true,
+            "**/coverage": true,
+            "**/.nyc_output": true,
+            "**/.cache": true,
+            "**/tmp": true,
+            "**/temp": true
+        },
+        "watcherExclude": {
+            "**/node_modules/**": true,
+            "**/dist/**": true,
+            "**/build/**": true,
+            "**/.git/**": true
+        },
+        "useExperimentalFileWatcher": false,
+        "associations": {},
+        "encoding": "utf8",
+        "eol": "\n",
+        "trimTrailingWhitespace": true,
+        "insertFinalNewline": true,
+        "trimFinalNewlines": true
+    },
+    "search": {
+        "exclude": {
+            "**/node_modules": true,
+            "**/dist": true,
+            "**/build": true,
+            "**/.git": true
+        },
+        "useGlobalIgnoreFiles": false,
+        "useParentIgnoreFiles": false,
+        "useIgnoreFiles": false,
+        "quickOpen": {
+            "includeSymbols": false
+        }
+    },
+    "telemetry": {
+        "enableCrashReporter": false,
+        "enableTelemetry": false
+    },
+    "update": {
+        "mode": "none"
+    },
+    "extensions": {
+        "autoUpdate": false,
+        "autoCheckUpdates": false,
+        "ignoreRecommendations": true
+    },
+    "security": {
+        "workspace": {
+            "trust": {
+                "enabled": false
+            }
+        }
+    },
+    "http": {
+        "proxySupport": "off"
+    },
+    "git": {
+        "enabled": false,
+        "autorefresh": false,
+        "autofetch": false,
+        "confirmSync": false,
+        "enableSmartCommit": false,
+        "enableCommitSigning": false,
+        "showPushSuccessNotification": false,
+        "showProgress": false
+    },
+    "scm": {
+        "alwaysShowRepositories": false
+    },
+    "debug": {
+        "console": {
+            "closeOnEnd": true
+        },
+        "internalConsoleOptions": "neverOpen"
+    },
+    "typescript": {
+        "suggest": {
+            "enabled": false
+        },
+        "validate": {
+            "enable": false
+        }
+    },
+    "javascript": {
+        "suggest": {
+            "enabled": false
+        },
+        "validate": {
+            "enable": false
+        }
+    },
+    "emmet": {
+        "showExpandedAbbreviation": "never",
+        "showAbbreviationSuggestions": false
+    },
+    "css": {
+        "validate": false
+    },
+    "html": {
+        "validate": {
+            "scripts": false,
+            "styles": false
+        }
+    },
+    "json": {
+        "validate": {
+            "enable": false
+        }
+    }
+} 

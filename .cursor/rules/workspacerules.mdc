@@ -1,0 +1,254 @@
+---
+alwaysApply: true
+---
+
+# Cursor AI Workspace Rules - Galaxy Android IDE Project
+
+## Project Overview
+This project aims to create a solution for running Cursor AI IDE on Samsung Galaxy Android devices through multiple implementation approaches including Termux-based Linux environment, React Native app, PWA, and Cordova hybrid app.
+
+## Code Style & Standards
+
+### General Guidelines
+- Use TypeScript for all JavaScript/TypeScript files
+- Follow ESLint and Prettier configurations
+- Implement comprehensive error handling with try-catch blocks
+- Add detailed JSDoc comments for all functions and classes
+- Use semantic versioning for releases
+- Maintain consistent indentation (2 spaces)
+
+### File Naming Conventions
+- Use kebab-case for file names: `cursor-ide-launcher.ts`
+- Use PascalCase for React components: `CodeEditor.tsx`
+- Use camelCase for utility functions: `setupEnvironment.js`
+- Use UPPER_CASE for constants: `API_ENDPOINTS.ts`
+
+### Directory Structure
+```
+project-root/
+├── src/
+│   ├── components/     # React/React Native components
+│   ├── services/      # API and business logic
+│   ├── utils/         # Helper functions
+│   ├── types/         # TypeScript type definitions
+│   └── config/        # Configuration files
+├── scripts/           # Shell scripts for Termux setup
+├── backend/           # Node.js server code
+├── docs/             # Documentation
+└── tests/            # Test files
+```
+
+## Implementation Standards
+
+### Android/Termux Scripts
+- Always check for required dependencies before installation
+- Implement rollback mechanisms for failed installations
+- Use proper error codes and logging
+- Test on multiple Android versions (7.0+)
+- Optimize for ARM64 architecture
+- Include memory and battery optimization
+
+### React Native Development
+- Use functional components with hooks
+- Implement proper state management (Redux/Context)
+- Follow React Native performance best practices
+- Handle device orientation changes
+- Implement proper keyboard handling for mobile
+- Use TypeScript interfaces for props and state
+
+### Backend Development
+- Use Express.js with TypeScript
+- Implement proper API versioning (/api/v1/)
+- Use middleware for authentication and logging
+- Implement rate limiting and security headers
+- Use WebSockets for real-time features
+- Follow RESTful API design principles
+
+### PWA Development
+- Implement service workers for offline functionality
+- Use Workbox for caching strategies
+- Follow web accessibility guidelines (WCAG 2.1)
+- Implement responsive design with mobile-first approach
+- Use Web Components for reusable UI elements
+- Optimize for Core Web Vitals
+
+## Security Requirements
+
+### Data Protection
+- Never store sensitive data in plain text
+- Use HTTPS for all network communications
+- Implement proper input validation and sanitization
+- Use secure authentication methods (JWT with refresh tokens)
+- Encrypt local storage data
+- Follow OWASP mobile security guidelines
+
+### Android Permissions
+- Request minimal necessary permissions
+- Implement runtime permission handling
+- Provide clear explanations for permission requests
+- Use scoped storage for file operations
+- Implement proper app sandboxing
+
+## Performance Optimization
+
+### Mobile-Specific Optimizations
+- Implement lazy loading for components and modules
+- Use virtual scrolling for large lists
+- Optimize bundle size with tree shaking
+- Implement proper memory management
+- Use efficient image formats (WebP, AVIF)
+- Minimize main thread blocking operations
+
+### Code Editor Optimizations
+- Use incremental parsing for syntax highlighting
+- Implement efficient diff algorithms
+- Use worker threads for heavy computations
+- Implement proper debouncing for user inputs
+- Optimize rendering for large files
+
+## Testing Requirements
+
+### Test Coverage
+- Maintain minimum 80% code coverage
+- Write unit tests for all utility functions
+- Implement integration tests for API endpoints
+- Create end-to-end tests for critical user flows
+- Test on multiple Android devices and versions
+
+### Testing Tools
+- Jest for unit testing
+- React Testing Library for component tests
+- Supertest for API testing
+- Detox for E2E mobile testing
+- Lighthouse for PWA performance testing
+
+## Documentation Standards
+
+### Code Documentation
+- Write comprehensive README files for each module
+- Include setup and installation instructions
+- Provide API documentation with examples
+- Create troubleshooting guides
+- Maintain changelog with semantic versioning
+
+### User Documentation
+- Create step-by-step installation guides
+- Include screenshots and video tutorials
+- Provide FAQ section
+- Document known limitations and workarounds
+- Maintain device compatibility matrix
+
+## Deployment & CI/CD
+
+### Build Process
+- Use GitHub Actions for continuous integration
+- Implement automated testing on pull requests
+- Create automated builds for different environments
+- Use semantic release for version management
+- Implement security scanning in CI pipeline
+
+### Release Management
+- Create staging and production environments
+- Implement feature flags for gradual rollouts
+- Use blue-green deployment strategies
+- Maintain rollback capabilities
+- Monitor application performance post-deployment
+
+## Error Handling & Logging
+
+### Error Management
+- Implement global error handlers
+- Use structured logging with appropriate levels
+- Include contextual information in error messages
+- Implement user-friendly error displays
+- Create error reporting mechanisms
+
+### Monitoring
+- Implement application performance monitoring
+- Track user analytics and usage patterns
+- Monitor resource usage (CPU, memory, battery)
+- Set up alerts for critical errors
+- Maintain performance benchmarks
+
+## Accessibility Requirements
+
+### Mobile Accessibility
+- Implement proper ARIA labels
+- Ensure keyboard navigation support
+- Provide sufficient color contrast ratios
+- Support screen readers
+- Implement proper focus management
+- Test with accessibility tools
+
+## Internationalization
+
+### Multi-language Support
+- Use i18n libraries for text localization
+- Support RTL languages
+- Implement proper date and number formatting
+- Handle different keyboard layouts
+- Test with various locales
+
+## AI Integration Guidelines
+
+### Cursor AI Integration
+- Implement proper API rate limiting
+- Handle AI service downtime gracefully
+- Cache AI responses when appropriate
+- Provide fallback mechanisms
+- Implement user privacy controls for AI features
+
+### Code Quality with AI
+- Use AI for code review suggestions
+- Implement AI-powered error detection
+- Provide intelligent code completion
+- Use AI for documentation generation
+- Implement AI-assisted refactoring
+
+## Environment Variables
+
+### Configuration Management
+```bash
+# Development
+NODE_ENV=development
+API_BASE_URL=http://localhost:3000
+LOG_LEVEL=debug
+
+# Production
+NODE_ENV=production
+API_BASE_URL=https://api.cursor-mobile.com
+LOG_LEVEL=info
+```
+
+## Git Workflow
+
+### Branching Strategy
+- Use GitFlow branching model
+- Create feature branches from develop
+- Use conventional commit messages
+- Require code reviews for all changes
+- Implement automated testing on branches
+
+### Commit Message Format
+```
+type(scope): subject
+
+body
+
+footer
+```
+
+Types: feat, fix, docs, style, refactor, test, chore
+
+## Dependencies Management
+
+### Package Management
+- Use npm/yarn for JavaScript dependencies
+- Pin exact versions for production dependencies
+- Regular security audits with npm audit
+- Keep dependencies up to date
+- Document critical dependencies
+
+---
+
+**Note**: These rules should be reviewed and updated regularly as the project evolves. All team members must follow these guidelines to ensure code consistency and project success.
