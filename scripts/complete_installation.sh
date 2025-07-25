@@ -215,9 +215,40 @@ echo "Cursor AI 설치 시작..."
 # 기존 Cursor AI 제거 (있는 경우)
 rm -rf cursor.AppImage squashfs-root 2>/dev/null || true
 
-# Cursor AI AppImage 다운로드 (ARM64 버전)
+# 네트워크 연결 테스트
+echo "네트워크 연결 테스트 중..."
+if ! nslookup download.cursor.sh >/dev/null 2>&1; then
+    echo "DNS 문제 감지, DNS 설정 수정 중..."
+    echo "nameserver 8.8.8.8" > /etc/resolv.conf
+    echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+    echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+fi
+
+# Cursor AI AppImage 다운로드 (여러 방법 시도)
 echo "Cursor AI ARM64 AppImage 다운로드 중..."
-wget -O cursor.AppImage "https://download.cursor.sh/linux/appImage/arm64"
+
+# 방법 1: 기본 URL
+if wget -O cursor.AppImage "https://download.cursor.sh/linux/appImage/arm64" --timeout=30; then
+    echo "기본 URL 다운로드 성공!"
+elif curl -L -o cursor.AppImage "https://download.cursor.sh/linux/appImage/arm64" --connect-timeout 30; then
+    echo "curl로 다운로드 성공!"
+elif wget -O cursor.AppImage "https://cursor.sh/download/linux/arm64" --timeout=30; then
+    echo "대체 URL 다운로드 성공!"
+elif curl -L -o cursor.AppImage "https://cursor.sh/download/linux/arm64" --connect-timeout 30; then
+    echo "curl 대체 URL 다운로드 성공!"
+elif wget -O cursor.AppImage "https://github.com/getcursor/cursor/releases/latest/download/cursor-linux-arm64.AppImage" --timeout=30; then
+    echo "GitHub 릴리즈 다운로드 성공!"
+elif curl -L -o cursor.AppImage "https://github.com/getcursor/cursor/releases/latest/download/cursor-linux-arm64.AppImage" --connect-timeout 30; then
+    echo "curl GitHub 릴리즈 다운로드 성공!"
+else
+    echo "모든 다운로드 방법 실패"
+    echo "수동 다운로드가 필요합니다:"
+    echo "1. 브라우저에서 https://cursor.sh 방문"
+    echo "2. ARM64 버전 다운로드"
+    echo "3. 파일을 /home/cursor-ide/ 폴더로 이동"
+    echo "4. 파일명을 'cursor.AppImage'로 변경"
+    exit 1
+fi
 
 # 실행 권한 부여
 chmod +x cursor.AppImage
@@ -230,7 +261,9 @@ echo "Cursor AI 설치 완료!"
 EOF
 
     proot-distro login ubuntu -- bash "$HOME/install_cursor_complete.sh"
+    local result=$?
     rm "$HOME/install_cursor_complete.sh"
+    return $result
 }
 
 # launch.sh 생성
