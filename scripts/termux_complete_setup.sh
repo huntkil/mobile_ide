@@ -56,9 +56,7 @@ INSTALL_STEPS=(
     "최소 의존성 패키지 설치"
     "Ubuntu 환경 설치"
     "Ubuntu 환경 완전 설정"
-    "Node.js 완전 설치"
-    "Cursor AI 다운로드"
-    "Cursor AI 설치"
+    "Cursor AI 다운로드 및 설치"
     "설정 파일 생성"
     "최종 검증"
 )
@@ -514,69 +512,58 @@ EOF
     return 0
 }
 
-# Cursor AI 다운로드 (INSTALL-003)
-download_cursor_ai() {
-    log_info "Cursor AI 다운로드 중..."
+# Cursor AI 다운로드 및 설치 (INSTALL-003, INSTALL-004)
+download_and_install_cursor_ai() {
+    log_info "Cursor AI 다운로드 및 설치 중..."
     
-    # 다운로드 URL 목록 (여러 대체 URL)
-    local download_urls=(
-        "https://download.cursor.sh/linux/appImage/arm64"
-        "https://cursor.sh/download/linux/arm64"
-        "https://github.com/getcursor/cursor/releases/latest/download/cursor-linux-arm64.AppImage"
-    )
-    
-    local download_success=false
-    
-    # 여러 URL에서 다운로드 시도
-    for url in "${download_urls[@]}"; do
-        log_info "다운로드 시도: $url"
-        
-        if wget --timeout=60 --tries=3 -O "$HOME/cursor.AppImage" "$url" 2>/dev/null; then
-            download_success=true
-            break
-        fi
-        
-        if curl --connect-timeout 60 --retry 3 -L -o "$HOME/cursor.AppImage" "$url" 2>/dev/null; then
-            download_success=true
-            break
-        fi
-        
-        log_warning "다운로드 실패: $url"
-    done
-    
-    if [ "$download_success" = false ]; then
-        log_error "모든 다운로드 URL에서 실패했습니다. (INSTALL-003)"
-        echo ""
-        echo "수동 다운로드 방법:"
-        echo "1. 브라우저에서 https://cursor.sh/download 접속"
-        echo "2. Linux ARM64 버전 다운로드"
-        echo "3. 다운로드한 파일을 $HOME/cursor.AppImage로 복사"
-        echo ""
-        read -p "수동 다운로드 완료 후 Enter를 누르세요..."
-        
-        if [ ! -f "$HOME/cursor.AppImage" ]; then
-            log_error "수동 다운로드 파일을 찾을 수 없습니다"
-            return 1
-        fi
-    fi
-    
-    log_success "Cursor AI 다운로드 완료"
-    return 0
-}
-
-# Cursor AI 설치 (INSTALL-004)
-install_cursor_ai() {
-    log_info "Cursor AI 설치 중..."
-    
-    # Ubuntu 환경에서 설치
-    cat > "$HOME/install_cursor_complete.sh" << 'EOF'
+    # Ubuntu 환경에서 직접 다운로드 및 설치
+    cat > "$HOME/download_install_cursor.sh" << 'EOF'
 #!/bin/bash
 set -e
 
 cd /home/cursor-ide
 
-# AppImage 파일 복사
-cp /home/cursor.AppImage ./cursor.AppImage
+# 다운로드 URL 목록 (여러 대체 URL)
+download_urls=(
+    "https://download.cursor.sh/linux/appImage/arm64"
+    "https://cursor.sh/download/linux/arm64"
+    "https://github.com/getcursor/cursor/releases/latest/download/cursor-linux-arm64.AppImage"
+)
+
+download_success=false
+
+# 여러 URL에서 다운로드 시도
+for url in "${download_urls[@]}"; do
+    echo "다운로드 시도: $url"
+    
+    if wget --timeout=60 --tries=3 -O cursor.AppImage "$url" 2>/dev/null; then
+        download_success=true
+        break
+    fi
+    
+    if curl --connect-timeout 60 --retry 3 -L -o cursor.AppImage "$url" 2>/dev/null; then
+        download_success=true
+        break
+    fi
+    
+    echo "다운로드 실패: $url"
+done
+
+if [ "$download_success" = false ]; then
+    echo "모든 다운로드 URL에서 실패했습니다."
+    echo ""
+    echo "수동 다운로드 방법:"
+    echo "1. 브라우저에서 https://cursor.sh/download 접속"
+    echo "2. Linux ARM64 버전 다운로드"
+    echo "3. 다운로드한 파일을 현재 디렉토리로 복사"
+    echo ""
+    read -p "수동 다운로드 완료 후 Enter를 누르세요..."
+    
+    if [ ! -f "cursor.AppImage" ]; then
+        echo "수동 다운로드 파일을 찾을 수 없습니다"
+        exit 1
+    fi
+fi
 
 # 실행 권한 부여
 chmod +x cursor.AppImage
@@ -619,20 +606,20 @@ LAUNCH_EOF
 
 chmod +x launch_cursor.sh
 
-echo "Cursor AI 설치 완료"
+echo "Cursor AI 다운로드 및 설치 완료"
 EOF
     
-    # Ubuntu 환경에서 설치 스크립트 실행
-    log_info "Ubuntu 환경에서 Cursor AI 설치..."
-    proot-distro login ubuntu -- bash "$HOME/install_cursor_complete.sh" || {
-        log_error "Cursor AI 설치에 실패했습니다. (INSTALL-004)"
+    # Ubuntu 환경에서 다운로드 및 설치 스크립트 실행
+    log_info "Ubuntu 환경에서 Cursor AI 다운로드 및 설치..."
+    proot-distro login ubuntu -- bash "$HOME/download_install_cursor.sh" || {
+        log_error "Cursor AI 다운로드 및 설치에 실패했습니다. (INSTALL-003, INSTALL-004)"
         return 1
     }
     
     # 임시 스크립트 정리
-    rm -f "$HOME/install_cursor_complete.sh"
+    rm -f "$HOME/download_install_cursor.sh"
     
-    log_success "Cursor AI 설치 완료"
+    log_success "Cursor AI 다운로드 및 설치 완료"
     return 0
 }
 
@@ -863,8 +850,7 @@ main_install() {
     run_install_step "최소 의존성 패키지 설치" install_minimal_dependencies || exit 1
     run_install_step "Ubuntu 환경 설치" install_ubuntu_environment || exit 1
     run_install_step "Ubuntu 환경 완전 설정" setup_complete_ubuntu_environment || exit 1
-    run_install_step "Cursor AI 다운로드" download_cursor_ai || exit 1
-    run_install_step "Cursor AI 설치" install_cursor_ai || exit 1
+    run_install_step "Cursor AI 다운로드 및 설치" download_and_install_cursor_ai || exit 1
     run_install_step "설정 파일 생성" create_configuration || exit 1
     run_install_step "최종 검증" final_verification || exit 1
     
