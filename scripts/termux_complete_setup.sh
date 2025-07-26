@@ -523,11 +523,11 @@ set -e
 
 cd /home/cursor-ide
 
-# 다운로드 URL 목록 (여러 대체 URL)
+# 다운로드 URL 목록 (올바른 URL들로 수정)
 download_urls=(
+    "https://github.com/getcursor/cursor/releases/latest/download/cursor-linux-arm64.AppImage"
     "https://download.cursor.sh/linux/appImage/arm64"
     "https://cursor.sh/download/linux/arm64"
-    "https://github.com/getcursor/cursor/releases/latest/download/cursor-linux-arm64.AppImage"
 )
 
 download_success=false
@@ -536,14 +536,31 @@ download_success=false
 for url in "${download_urls[@]}"; do
     echo "다운로드 시도: $url"
     
+    # 기존 파일 제거
+    rm -f cursor.AppImage
+    
     if wget --timeout=60 --tries=3 -O cursor.AppImage "$url" 2>/dev/null; then
-        download_success=true
-        break
+        # 파일 유효성 검사 (HTML이 아닌 실제 AppImage인지 확인)
+        if file cursor.AppImage | grep -q "ELF\|AppImage\|executable"; then
+            download_success=true
+            echo "유효한 AppImage 파일 다운로드 완료"
+            break
+        else
+            echo "HTML 페이지가 다운로드됨, 다른 URL 시도..."
+            rm -f cursor.AppImage
+        fi
     fi
     
     if curl --connect-timeout 60 --retry 3 -L -o cursor.AppImage "$url" 2>/dev/null; then
-        download_success=true
-        break
+        # 파일 유효성 검사
+        if file cursor.AppImage | grep -q "ELF\|AppImage\|executable"; then
+            download_success=true
+            echo "유효한 AppImage 파일 다운로드 완료"
+            break
+        else
+            echo "HTML 페이지가 다운로드됨, 다른 URL 시도..."
+            rm -f cursor.AppImage
+        fi
     fi
     
     echo "다운로드 실패: $url"
@@ -553,14 +570,20 @@ if [ "$download_success" = false ]; then
     echo "모든 다운로드 URL에서 실패했습니다."
     echo ""
     echo "수동 다운로드 방법:"
-    echo "1. 브라우저에서 https://cursor.sh/download 접속"
-    echo "2. Linux ARM64 버전 다운로드"
+    echo "1. 브라우저에서 https://github.com/getcursor/cursor/releases 접속"
+    echo "2. 최신 릴리즈에서 'cursor-linux-arm64.AppImage' 다운로드"
     echo "3. 다운로드한 파일을 현재 디렉토리로 복사"
     echo ""
     read -p "수동 다운로드 완료 후 Enter를 누르세요..."
     
     if [ ! -f "cursor.AppImage" ]; then
         echo "수동 다운로드 파일을 찾을 수 없습니다"
+        exit 1
+    fi
+    
+    # 수동 다운로드 파일도 유효성 검사
+    if ! file cursor.AppImage | grep -q "ELF\|AppImage\|executable"; then
+        echo "수동 다운로드 파일이 유효하지 않습니다"
         exit 1
     fi
 fi
