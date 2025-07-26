@@ -673,15 +673,18 @@ proot-distro login ubuntu -- bash -c "
     mkdir -p \"\$XDG_RUNTIME_DIR\" 2>/dev/null || true
     chmod 700 \"\$XDG_RUNTIME_DIR\" 2>/dev/null || true
     
-    # Xvfb 시작
-    Xvfb :0 -screen 0 1200x800x24 -ac +extension GLX +render -noreset &
+    # 메모리 정리
+    sync && echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+    
+    # Xvfb 시작 (메모리 절약을 위한 낮은 해상도)
+    Xvfb :0 -screen 0 800x600x16 -ac +extension GLX +render -noreset &
     XVFB_PID=\$!
     sleep 3
     
-    # 강력한 옵션으로 실행 (모든 오류 우회)
+    # 메모리 최적화 및 강력한 옵션으로 실행 (모든 오류 우회)
     if [ -f './squashfs-root/AppRun' ]; then
-        echo 'AppRun으로 Cursor AI 실행...'
-        ./squashfs-root/AppRun --no-sandbox --disable-gpu-sandbox --disable-dev-shm-usage --disable-web-security --disable-features=NetworkService --disable-background-networking --disable-client-side-phishing-detection --disable-component-update --disable-domain-reliability --disable-features=TranslateUI --disable-ipc-flooding-protection --disable-sync --metrics-recording-only --no-first-run --safebrowsing-disable-auto-update --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows --disable-hang-monitor --disable-prompt-on-repost --disable-domain-reliability --disable-component-extensions-with-background-pages --disable-default-apps --disable-extensions --disable-plugins --disable-sync --disable-translate --no-first-run --no-default-browser-check \"\$@\" 2>/dev/null || true
+        echo 'AppRun으로 Cursor AI 실행 (메모리 최적화)...'
+        ./squashfs-root/AppRun --no-sandbox --disable-gpu-sandbox --disable-dev-shm-usage --disable-web-security --disable-features=NetworkService --disable-background-networking --disable-client-side-phishing-detection --disable-component-update --disable-domain-reliability --disable-features=TranslateUI --disable-ipc-flooding-protection --disable-sync --metrics-recording-only --no-first-run --safebrowsing-disable-auto-update --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows --disable-hang-monitor --disable-prompt-on-repost --disable-domain-reliability --disable-component-extensions-with-background-pages --disable-default-apps --disable-extensions --disable-plugins --disable-sync --disable-translate --no-first-run --no-default-browser-check --max-old-space-size=1024 --memory-pressure-off --disable-features=VizDisplayCompositor --disable-features=VizHitTestSurfaceLayer --disable-features=VizSurfaceLayer --disable-background-media-suspend \"\$@\" 2>/dev/null || true
     elif [ -f './cursor.AppImage' ]; then
         echo 'AppImage 추출 후 실행...'
         ./cursor.AppImage --appimage-extract 2>/dev/null || true
