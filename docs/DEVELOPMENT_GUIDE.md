@@ -197,110 +197,29 @@ chmod +x ~/launch.sh
 
 ## ❌ 발생한 오류들과 해결 방법
 
-### 1. Ubuntu 환경 중복 설치 오류
-**오류**: `Error: distribution 'ubuntu' is already installed.`
-
-**원인**: 기존 Ubuntu 환경이 이미 설치되어 있음
-
-**해결 방법**:
-```bash
-# 방법 1: 환경 재설정 (데이터 유지)
-proot-distro reset ubuntu
-
-# 방법 2: 완전 제거 후 재설치
-proot-distro remove ubuntu
-proot-distro install ubuntu
-
-# 방법 3: 기존 환경에서 직접 설정
-proot-distro login ubuntu
-```
-
-### 2. npm 호환성 문제
+### 1. **실행 스크립트 아키텍처 문제 (v1.0 - v2.3)**
 **오류**: 
-```
-npm error engine Unsupported engine
-npm error engine Not compatible with your version of node/npm: npm@11.5.1
-npm error notsup Required: {"node":"^20.17.0 || >=22.9.0"}
-npm error notsup Actual: {"npm":"10.8.2","node":"v18.20.8"}
-```
+- `mkdir: cannot create directory ''` (변수 확장 문제)
+- `AppRun: No such file or directory` (경로 혼동 문제)
+- `Failed to connect to the bus` (시스템 서비스 오류)
+- `Fatal process out of memory` (메모리 부족 문제)
 
-**원인**: Node.js 18과 npm 11.5.1 간의 호환성 문제
+**원인**:
+- Termux 환경과 proot-distro Ubuntu 환경 간의 복잡한 상호작용
+- 환경 변수 전달 실패, 경로 불일치, 시스템 서비스 접근 제한
+- 제한된 모바일 환경에서의 메모리 부족
 
-**해결 방법**:
+**해결 방법 (v3.0.0 아키텍처):**
+- **독립 실행 스크립트**: Ubuntu 내부에 모든 실행 로직을 포함하는 `start.sh`를 생성하여 환경 간의 의존성을 제거.
+- **단순화된 런처**: Termux의 `launch.sh`는 Ubuntu의 `start.sh`를 호출만 하도록 단순화.
+- **강력한 실행 옵션**: 메모리 제한, GPU 비활성화, 모든 시스템 서비스 오류를 우회하는 옵션을 `start.sh`에 내장.
+- **오류 메시지 숨김**: `> /dev/null 2>&1`을 사용하여 사용자에게 불필요한 오류 메시지를 숨기고 안정적인 실행 환경 제공.
+
 ```bash
-# npm 버전 다운그레이드
-npm install -g npm@10.8.2
-
-# npm 캐시 정리
-npm cache clean --force
-
-# 호환되는 전역 패키지 설치
-npm install -g yarn@1.22.19 typescript@5.3.3 ts-node@10.9.2
-```
-
-### 3. ARM64 패키지 호환성 문제
-**오류**: `E: Package 'libasound2' has no installation candidate`
-
-**원인**: ARM64 아키텍처에서 특정 패키지명이 다름
-
-**해결 방법**:
-```bash
-# ARM64 특정 패키지 사용
-apt install -y \
-    libcups2t64 \
-    libatspi2.0-0t64 \
-    libgtk-3-0t64 \
-    libasound2t64
-
-# 대체 패키지 시도
-apt install -y libcups2 libatspi2.0-0 libgtk-3-0 libasound2
-```
-
-### 4. 네트워크 연결 문제
-**오류**: `wget: unable to resolve host address 'download.cursor.sh'`
-
-**원인**: DNS 해석 실패 또는 네트워크 연결 문제
-
-**해결 방법**:
-```bash
-# DNS 설정 수정
-echo "nameserver 8.8.8.8" > /etc/resolv.conf
-echo "nameserver 8.8.4.4" >> /etc/resolv.conf
-echo "nameserver 1.1.1.1" >> /etc/resolv.conf
-
-# 대체 다운로드 방법
-curl -L -o cursor.AppImage "https://download.cursor.sh/linux/appImage/arm64"
-wget -O cursor.AppImage "https://cursor.sh/download/linux/arm64"
-wget -O cursor.AppImage "https://github.com/getcursor/cursor/releases/latest/download/cursor-linux-arm64.AppImage"
-```
-
-### 5. 사용자 권한 문제
-**오류**: `Warning: proot-distro should not be executed as root user.`
-
-**원인**: root 사용자로 스크립트 실행
-
-**해결 방법**:
-```bash
-# 일반 사용자로 전환
-exit  # root 세션 종료
-su - [사용자명]  # 특정 사용자로 전환
-
-# 사용자 ID 확인 (0이 아니어야 함)
-id -u
-```
-
-### 6. 스크립트 문법 오류
-**오류**: `unexpected EOF while looking for matching '"'`
-
-**원인**: 따옴표가 제대로 닫히지 않음
-
-**해결 방법**:
-```bash
-# 임시 스크립트 정리
-rm -f ~/setup_ubuntu_local.sh ~/install_local_cursor.sh
-
-# 수정된 스크립트 사용
-curl -sSL https://raw.githubusercontent.com/huntkil/mobile_ide/main/scripts/fix_script_syntax.sh | bash
+# 새로운 아키텍처로 완전 재설치
+cd ~/mobile_ide
+git pull origin main
+./scripts/termux_local_setup.sh
 ```
 
 ## 🔧 스크립트 개발 가이드
