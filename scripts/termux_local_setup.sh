@@ -581,20 +581,20 @@ xhost +local: 2>/dev/null || true
 # Cursor 실행 (AppRun 우선, FUSE 문제 해결)
 if [ -f "./squashfs-root/AppRun" ]; then
     echo "AppRun으로 Cursor AI 실행 (--no-sandbox)..."
-    ./squashfs-root/AppRun --no-sandbox "$@"
+    ./squashfs-root/AppRun --no-sandbox --disable-gpu-sandbox --disable-software-rasterizer "$@"
 elif [ -f "./squashfs-root/cursor" ]; then
     echo "추출된 Cursor AI 실행..."
-    ./squashfs-root/cursor --no-sandbox "$@"
+    ./squashfs-root/cursor --no-sandbox --disable-gpu-sandbox --disable-software-rasterizer "$@"
 elif [ -f "./cursor.AppImage" ]; then
     echo "AppImage 추출 후 실행 (FUSE 문제 해결)..."
     # AppImage 추출 (FUSE 문제 해결)
     ./cursor.AppImage --appimage-extract
     if [ -f "./squashfs-root/AppRun" ]; then
         echo "추출 완료, AppRun으로 실행..."
-        ./squashfs-root/AppRun --no-sandbox "$@"
+        ./squashfs-root/AppRun --no-sandbox --disable-gpu-sandbox --disable-software-rasterizer "$@"
     elif [ -f "./squashfs-root/cursor" ]; then
         echo "추출 완료, cursor로 실행..."
-        ./squashfs-root/cursor --no-sandbox "$@"
+        ./squashfs-root/cursor --no-sandbox --disable-gpu-sandbox --disable-software-rasterizer "$@"
     else
         echo "AppImage 추출 실패"
         ls -la squashfs-root/
