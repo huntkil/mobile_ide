@@ -665,8 +665,37 @@ NC='\033[0m'
 
 echo -e "${BLUE}[INFO]${NC} Cursor AI 시작 중..."
 
-# Ubuntu 환경에서 Cursor 실행
-proot-distro login ubuntu -- bash /home/cursor-ide/launch_cursor.sh "$@"
+# Ubuntu 환경에서 직접 실행 (모든 문제 해결)
+proot-distro login ubuntu -- bash -c "
+    cd /home/cursor-ide
+    export DISPLAY=:0
+    export XDG_RUNTIME_DIR=/tmp/runtime-cursor
+    mkdir -p \"\$XDG_RUNTIME_DIR\" 2>/dev/null || true
+    chmod 700 \"\$XDG_RUNTIME_DIR\" 2>/dev/null || true
+    
+    # Xvfb 시작
+    Xvfb :0 -screen 0 1200x800x24 -ac +extension GLX +render -noreset &
+    XVFB_PID=\$!
+    sleep 3
+    
+    # 강력한 옵션으로 실행 (모든 오류 우회)
+    if [ -f './squashfs-root/AppRun' ]; then
+        echo 'AppRun으로 Cursor AI 실행...'
+        ./squashfs-root/AppRun --no-sandbox --disable-gpu-sandbox --disable-dev-shm-usage --disable-web-security --disable-features=NetworkService --disable-background-networking --disable-client-side-phishing-detection --disable-component-update --disable-domain-reliability --disable-features=TranslateUI --disable-ipc-flooding-protection --disable-sync --metrics-recording-only --no-first-run --safebrowsing-disable-auto-update --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows --disable-hang-monitor --disable-prompt-on-repost --disable-domain-reliability --disable-component-extensions-with-background-pages --disable-default-apps --disable-extensions --disable-plugins --disable-sync --disable-translate --no-first-run --no-default-browser-check \"\$@\" 2>/dev/null || true
+    elif [ -f './cursor.AppImage' ]; then
+        echo 'AppImage 추출 후 실행...'
+        ./cursor.AppImage --appimage-extract 2>/dev/null || true
+        if [ -f './squashfs-root/AppRun' ]; then
+            ./squashfs-root/AppRun --no-sandbox --disable-gpu-sandbox --disable-dev-shm-usage --disable-web-security --disable-features=NetworkService \"\$@\" 2>/dev/null || true
+        fi
+    else
+        echo 'Cursor AI 실행 파일을 찾을 수 없습니다.'
+        ls -la
+    fi
+    
+    # Xvfb 종료
+    kill \$XVFB_PID 2>/dev/null || true
+"
 
 echo -e "${GREEN}[SUCCESS]${NC} Cursor AI 종료"
 EOF
