@@ -673,8 +673,10 @@ proot-distro login ubuntu -- bash -c "
     mkdir -p \"\$XDG_RUNTIME_DIR\" 2>/dev/null || true
     chmod 700 \"\$XDG_RUNTIME_DIR\" 2>/dev/null || true
     
-    # 메모리 정리
-    sync && echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+    # 메모리 정리 (Android Termux 환경에서 가능한 방법)
+    sync 2>/dev/null || true
+    # 시스템 캐시 정리는 권한 부족으로 생략
+    echo \"메모리 정리 중... (시스템 캐시는 권한 부족으로 생략)\"
     
     # Xvfb 시작 (메모리 절약을 위한 낮은 해상도)
     Xvfb :0 -screen 0 800x600x16 -ac +extension GLX +render -noreset &
