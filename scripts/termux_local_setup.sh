@@ -555,12 +555,16 @@ fi
 # 실행 파일 권한 확인
 chmod +x "\$CURSOR_EXEC" 2>/dev/null || true
 
-# 완전한 실행 스크립트 생성
+# 완전한 실행 스크립트 생성 (FUSE 문제 해결)
 cat > launch_cursor.sh << 'LAUNCH_EOF'
 #!/bin/bash
 cd /home/cursor-ide
+
+# 환경 변수 설정
 export DISPLAY=:0
 export XDG_RUNTIME_DIR=/tmp/runtime-cursor
+
+# 디렉토리 생성 (변수 확장 문제 해결)
 mkdir -p "$XDG_RUNTIME_DIR"
 chmod 700 "$XDG_RUNTIME_DIR"
 
@@ -574,13 +578,21 @@ sleep 3
 # X11 권한 설정
 xhost +local: 2>/dev/null || true
 
-# Cursor 실행 (경로 확인)
+# Cursor 실행 (추출된 버전 우선, FUSE 문제 해결)
 if [ -f "./squashfs-root/cursor" ]; then
     echo "추출된 Cursor AI 실행..."
     ./squashfs-root/cursor "$@"
 elif [ -f "./cursor.AppImage" ]; then
-    echo "AppImage 직접 실행..."
-    ./cursor.AppImage "$@"
+    echo "AppImage 추출 후 실행 (FUSE 문제 해결)..."
+    # AppImage 추출 (FUSE 문제 해결)
+    ./cursor.AppImage --appimage-extract
+    if [ -f "./squashfs-root/cursor" ]; then
+        echo "추출 완료, Cursor AI 실행..."
+        ./squashfs-root/cursor "$@"
+    else
+        echo "AppImage 추출 실패"
+        exit 1
+    fi
 else
     echo "Cursor AI 실행 파일을 찾을 수 없습니다."
     echo "현재 디렉토리 내용:"
