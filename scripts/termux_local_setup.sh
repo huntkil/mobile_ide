@@ -579,22 +579,25 @@ sleep 3
 xhost +local: 2>/dev/null || true
 
 # Cursor 실행 (AppRun 우선, FUSE 문제 해결)
+# Cursor 실행 옵션 (시스템 서비스 문제 해결)
+CURSOR_OPTS="--no-sandbox --disable-gpu-sandbox --disable-dev-shm-usage --disable-web-security --disable-features=VizDisplayCompositor --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows --disable-ipc-flooding-protection --disable-hang-monitor --disable-prompt-on-repost --disable-domain-reliability --disable-component-extensions-with-background-pages --disable-default-apps --disable-extensions --disable-plugins --disable-sync --disable-translate --no-first-run --no-default-browser-check --disable-background-networking --disable-client-side-phishing-detection --disable-component-update --disable-domain-reliability --disable-features=TranslateUI --disable-ipc-flooding-protection --disable-sync --metrics-recording-only --no-first-run --safebrowsing-disable-auto-update"
+
 if [ -f "./squashfs-root/AppRun" ]; then
-    echo "AppRun으로 Cursor AI 실행 (--no-sandbox)..."
-    ./squashfs-root/AppRun --no-sandbox --disable-gpu-sandbox --disable-software-rasterizer "$@"
+    echo "AppRun으로 Cursor AI 실행..."
+    ./squashfs-root/AppRun $CURSOR_OPTS "$@"
 elif [ -f "./squashfs-root/cursor" ]; then
     echo "추출된 Cursor AI 실행..."
-    ./squashfs-root/cursor --no-sandbox --disable-gpu-sandbox --disable-software-rasterizer "$@"
+    ./squashfs-root/cursor $CURSOR_OPTS "$@"
 elif [ -f "./cursor.AppImage" ]; then
     echo "AppImage 추출 후 실행 (FUSE 문제 해결)..."
     # AppImage 추출 (FUSE 문제 해결)
     ./cursor.AppImage --appimage-extract
     if [ -f "./squashfs-root/AppRun" ]; then
         echo "추출 완료, AppRun으로 실행..."
-        ./squashfs-root/AppRun --no-sandbox --disable-gpu-sandbox --disable-software-rasterizer "$@"
+        ./squashfs-root/AppRun $CURSOR_OPTS "$@"
     elif [ -f "./squashfs-root/cursor" ]; then
         echo "추출 완료, cursor로 실행..."
-        ./squashfs-root/cursor --no-sandbox --disable-gpu-sandbox --disable-software-rasterizer "$@"
+        ./squashfs-root/cursor $CURSOR_OPTS "$@"
     else
         echo "AppImage 추출 실패"
         ls -la squashfs-root/
