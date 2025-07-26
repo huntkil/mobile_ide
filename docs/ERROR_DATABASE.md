@@ -179,6 +179,82 @@ cd /home/cursor-ide
 
 ---
 
+### 6. FUSE 마운트 오류
+**오류 코드**: `COMPAT-004`  
+**심각도**: 🟠 HIGH  
+**오류 메시지**: 
+```
+Error: No suitable fusermount binary found on the $PATH
+fuse: failed to open /dev/fuse: Permission denied
+Cannot mount AppImage, please check your FUSE setup.
+```
+
+**원인 분석**:
+- Android Termux 환경에서 FUSE 지원 제한
+- AppImage 마운트 권한 부족
+- 시스템 레벨 FUSE 설정 누락
+
+**해결 방법**:
+```bash
+# 1. AppImage 추출 방식 사용 (권장)
+cd ~/cursor-ide
+proot-distro login ubuntu
+cd /home/cursor-ide
+
+# AppImage 추출
+./cursor.AppImage --appimage-extract
+
+# 추출된 버전 실행
+./squashfs-root/cursor
+
+# 2. 또는 수정된 launch_cursor.sh 사용
+cat > launch_cursor.sh << 'EOF'
+#!/bin/bash
+cd /home/cursor-ide
+export DISPLAY=:0
+export XDG_RUNTIME_DIR=/tmp/runtime-cursor
+mkdir -p "$XDG_RUNTIME_DIR"
+chmod 700 "$XDG_RUNTIME_DIR"
+
+# Xvfb 시작 (백그라운드)
+Xvfb :0 -screen 0 1200x800x24 -ac +extension GLX +render -noreset &
+XVFB_PID=$!
+
+# 잠시 대기
+sleep 3
+
+# X11 권한 설정
+xhost +local: 2>/dev/null || true
+
+# Cursor 실행 (추출된 버전 우선)
+if [ -f "./squashfs-root/cursor" ]; then
+    echo "추출된 Cursor AI 실행..."
+    ./squashfs-root/cursor "$@"
+elif [ -f "./cursor.AppImage" ]; then
+    echo "AppImage 추출 후 실행..."
+    ./cursor.AppImage --appimage-extract
+    ./squashfs-root/cursor "$@"
+else
+    echo "Cursor AI 실행 파일을 찾을 수 없습니다."
+    exit 1
+fi
+
+# Xvfb 종료
+kill $XVFB_PID 2>/dev/null || true
+EOF
+
+chmod +x launch_cursor.sh
+```
+
+**예방 방법**:
+- AppImage 추출 방식 우선 사용
+- FUSE 의존성 제거
+- 추출된 버전으로 실행
+
+**관련 스크립트**: `termux_local_setup.sh`
+
+---
+
 ### 2. 패키지 설치 실패
 **오류 코드**: `INSTALL-002`  
 **심각도**: 🟠 HIGH  
