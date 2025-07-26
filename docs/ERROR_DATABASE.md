@@ -131,6 +131,49 @@ chmod +x launch_cursor.sh
 
 ---
 
+### 5. Ubuntu 환경 경로 문제
+**오류 코드**: `INSTALL-004`  
+**심각도**: 🟠 HIGH  
+**오류 메시지**: 
+```
+Error: Ubuntu 환경이 설치되지 않았습니다.
+Ubuntu 환경 경로: /data/data/com.termux/files/home/ubuntu
+```
+
+**원인 분석**:
+- `proot-distro`가 Ubuntu 환경을 예상과 다른 경로에 설치
+- 검증 스크립트가 고정된 경로만 확인
+- Android Termux 환경에서 경로 구조 차이
+
+**해결 방법**:
+```bash
+# 1. 실제 Ubuntu 환경 경로 확인
+ls -la ~/.local/share/proot-distro/installed-rootfs/
+ls -la ~/.proot-distro/installed-rootfs/
+
+# 2. 설치된 배포판 확인
+proot-distro list
+
+# 3. Ubuntu 환경 진입
+proot-distro login ubuntu
+
+# 4. Cursor IDE 확인
+cd /home/cursor-ide
+ls -la
+
+# 5. 수동으로 실행
+./launch_cursor.sh
+```
+
+**예방 방법**:
+- 검증 스크립트에서 여러 가능한 경로 확인
+- `proot-distro` 설치 경로 동적 탐지
+- 설치 전 환경 경로 확인
+
+**관련 스크립트**: `termux_local_setup.sh`
+
+---
+
 ### 2. 패키지 설치 실패
 **오류 코드**: `INSTALL-002`  
 **심각도**: 🟠 HIGH  

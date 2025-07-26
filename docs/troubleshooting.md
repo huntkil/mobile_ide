@@ -65,29 +65,31 @@ chmod +x launch_cursor.sh
 ./launch_cursor.sh
 ```
 
-### 1. 검증 스크립트 버그 문제
+### 1. Ubuntu 환경 경로 문제
 
-#### 문제: Ubuntu 환경 설치 완료 후 최종 검증 실패
+#### 문제: Ubuntu 환경이 설치되지 않았습니다
 ```
 Error: Ubuntu 환경이 설치되지 않았습니다.
+Ubuntu 환경 경로: /data/data/com.termux/files/home/ubuntu
 ```
 
-**원인**: Termux 환경에서 `termux_local_setup.sh` 실행 시 검증 스크립트의 경로 확인 버그
+**원인**: `proot-distro`가 Ubuntu 환경을 예상과 다른 경로에 설치
 
 **해결 방법**:
 ```bash
-# 1. 실제 설치 상태 확인
-ls -la ~/ubuntu
-ls -la ~/ubuntu/home/cursor-ide/
+# 1. 실제 Ubuntu 환경 경로 확인
+ls -la ~/.local/share/proot-distro/installed-rootfs/
+ls -la ~/.proot-distro/installed-rootfs/
 
-# 2. 수동으로 Cursor AI 실행
-cd ~/cursor-ide
-./launch.sh
+# 2. 설치된 배포판 확인
+proot-distro list
 
-# 3. 또는 Ubuntu 환경에서 직접 실행
+# 3. Ubuntu 환경 진입
 proot-distro login ubuntu
+
+# 4. Cursor IDE 확인
 cd /home/cursor-ide
-./launch_cursor.sh
+ls -la
 ```
 
 ### 1. 환경 불일치 문제

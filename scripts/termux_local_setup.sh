@@ -752,30 +752,54 @@ EOF
 final_verification() {
     log_info "최종 검증 중..."
     
-    # Ubuntu 환경 확인 (더 강화된 검증)
-    if [ ! -d "$HOME/ubuntu" ]; then
+    # Ubuntu 환경 경로 찾기 (여러 가능한 경로 확인)
+    local ubuntu_paths=(
+        "$HOME/ubuntu"
+        "$HOME/.local/share/proot-distro/installed-rootfs/ubuntu"
+        "/data/data/com.termux/files/home/.local/share/proot-distro/installed-rootfs/ubuntu"
+        "$HOME/.proot-distro/installed-rootfs/ubuntu"
+    )
+    
+    local ubuntu_path=""
+    for path in "${ubuntu_paths[@]}"; do
+        if [ -d "$path" ]; then
+            ubuntu_path="$path"
+            log_info "Ubuntu 환경 발견: $ubuntu_path"
+            break
+        fi
+    done
+    
+    if [ -z "$ubuntu_path" ]; then
         log_error "Ubuntu 환경이 설치되지 않았습니다."
-        log_info "Ubuntu 환경 경로: $HOME/ubuntu"
+        log_info "확인한 경로들:"
+        for path in "${ubuntu_paths[@]}"; do
+            log_info "  - $path"
+        done
         log_info "현재 디렉토리: $(pwd)"
         log_info "홈 디렉토리: $HOME"
+        
+        # proot-distro 설치된 배포판 확인
+        log_info "설치된 배포판 확인:"
+        proot-distro list 2>/dev/null || log_warning "proot-distro 명령어 실행 불가"
+        
         return 1
     fi
     
     # Ubuntu 환경 내부 확인
-    if [ ! -d "$HOME/ubuntu/home" ]; then
+    if [ ! -d "$ubuntu_path/home" ]; then
         log_error "Ubuntu 환경 내부 구조가 올바르지 않습니다."
         log_info "Ubuntu 디렉토리 내용:"
-        ls -la "$HOME/ubuntu/" 2>/dev/null || log_warning "Ubuntu 디렉토리 접근 불가"
+        ls -la "$ubuntu_path/" 2>/dev/null || log_warning "Ubuntu 디렉토리 접근 불가"
         return 1
     fi
     
     # Cursor AI 확인 (경로 수정)
-    local cursor_path="$HOME/ubuntu/home/cursor-ide/launch_cursor.sh"
+    local cursor_path="$ubuntu_path/home/cursor-ide/launch_cursor.sh"
     if [ ! -f "$cursor_path" ]; then
         log_error "Cursor AI가 설치되지 않았습니다."
         log_info "예상 경로: $cursor_path"
         log_info "Ubuntu home 디렉토리 내용:"
-        ls -la "$HOME/ubuntu/home/" 2>/dev/null || log_warning "Ubuntu home 디렉토리 접근 불가"
+        ls -la "$ubuntu_path/home/" 2>/dev/null || log_warning "Ubuntu home 디렉토리 접근 불가"
         return 1
     fi
     
