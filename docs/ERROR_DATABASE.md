@@ -58,6 +58,79 @@ proot-distro login ubuntu
 
 ---
 
+### 4. launch_cursor.sh 스크립트 오류
+**오류 코드**: `SCRIPT-001`  
+**심각도**: 🟠 HIGH  
+**오류 메시지**: 
+```
+mkdir: missing operand
+chmod: missing operand after '700'
+./squashfs-root/cursor: No such file or directory
+```
+
+**원인 분석**:
+- 변수 확장 문제 (`$XDG_RUNTIME_DIR`, `$CURSOR_EXEC`)
+- 실행 파일 경로 확인 부족
+- AppImage 추출 실패
+
+**해결 방법**:
+```bash
+# Ubuntu 환경 진입
+proot-distro login ubuntu
+
+# Cursor IDE 디렉토리 확인
+cd /home/cursor-ide
+ls -la
+
+# 수정된 launch_cursor.sh 생성
+cat > launch_cursor.sh << 'EOF'
+#!/bin/bash
+cd /home/cursor-ide
+export DISPLAY=:0
+export XDG_RUNTIME_DIR=/tmp/runtime-cursor
+mkdir -p "$XDG_RUNTIME_DIR"
+chmod 700 "$XDG_RUNTIME_DIR"
+
+# Xvfb 시작 (백그라운드)
+Xvfb :0 -screen 0 1200x800x24 -ac +extension GLX +render -noreset &
+XVFB_PID=$!
+
+# 잠시 대기
+sleep 3
+
+# X11 권한 설정
+xhost +local: 2>/dev/null || true
+
+# Cursor 실행 (경로 확인)
+if [ -f "./squashfs-root/cursor" ]; then
+    echo "추출된 Cursor AI 실행..."
+    ./squashfs-root/cursor "$@"
+elif [ -f "./cursor.AppImage" ]; then
+    echo "AppImage 직접 실행..."
+    ./cursor.AppImage "$@"
+else
+    echo "Cursor AI 실행 파일을 찾을 수 없습니다."
+    echo "현재 디렉토리 내용:"
+    ls -la
+    exit 1
+fi
+
+# Xvfb 종료
+kill $XVFB_PID 2>/dev/null || true
+EOF
+
+chmod +x launch_cursor.sh
+```
+
+**예방 방법**:
+- 스크립트 생성 시 변수 확장 확인
+- 실행 파일 경로 검증 로직 추가
+- AppImage 추출 성공 여부 확인
+
+**관련 스크립트**: `termux_local_setup.sh`
+
+---
+
 ### 2. 패키지 설치 실패
 **오류 코드**: `INSTALL-002`  
 **심각도**: 🟠 HIGH  
@@ -81,6 +154,10 @@ apt search package-name
 
 # 수동 설치
 dpkg -i package.deb
+
+# Termux 패키지 업데이트 (필요한 경우)
+pkg update -y
+pkg upgrade -y
 ```
 
 **예방 방법**:
@@ -98,6 +175,8 @@ dpkg -i package.deb
 **원인 분석**:
 - DNS 해석 실패
 - 네트워크 연결 문제
+- 모바일 데이터 제한
+- 방화벽 차단
 - URL 변경
 
 **해결 방법**:

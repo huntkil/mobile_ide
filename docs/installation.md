@@ -30,13 +30,14 @@
 ### 2단계: 자동 설치 스크립트 실행
 
 ```bash
-# 원격 설치 (권장)
-curl -sSL https://raw.githubusercontent.com/your-repo/mobile_ide/main/scripts/setup.sh | bash
+# 로컬 AppImage 설치 (권장)
+./scripts/termux_local_setup.sh
 
-# 또는 수동 설치
-wget https://raw.githubusercontent.com/your-repo/mobile_ide/main/scripts/setup.sh
-chmod +x setup.sh
-./setup.sh
+# 또는 온라인 다운로드 설치
+./scripts/termux_complete_setup.sh
+
+# 또는 최소 설치
+./scripts/termux_minimal_setup.sh
 ```
 
 ### 3단계: 설치 과정 모니터링
@@ -133,6 +134,7 @@ chmod +x cursor.AppImage
 
 ```bash
 # 성능 최적화 실행
+cd ~/cursor-ide
 ./optimize.sh
 
 # 또는 수동 최적화
@@ -141,6 +143,9 @@ echo 3 > /proc/sys/vm/drop_caches
 
 # CPU 성능 모드 설정
 echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+
+# 배터리 최적화 비활성화 (성능 우선)
+dumpsys deviceidle disable
 ```
 
 ### Cursor AI 설정 커스터마이징
@@ -201,7 +206,10 @@ Xvfb :0 -screen 0 1200x800x24 &
 
 ```bash
 # 환경 복구 실행
-./restore.sh
+./scripts/termux_perfect_restore.sh
+
+# 또는 안전 복구
+./scripts/termux_safe_restore.sh
 
 # 또는 수동 복구
 rm -rf ~/ubuntu
@@ -215,6 +223,7 @@ proot-distro install ubuntu
 
 1. **Cursor AI 실행**
    ```bash
+   cd ~/cursor-ide
    ./launch.sh
    ```
 
@@ -263,7 +272,7 @@ proot-distro install ubuntu
 ## 📞 지원 및 문의
 
 ### 문제 보고
-- GitHub Issues: [프로젝트 이슈 페이지](https://github.com/your-repo/mobile_ide/issues)
+- GitHub Issues: [프로젝트 이슈 페이지](https://github.com/huntkil/mobile_ide/issues)
 - 이메일: support@mobile-ide.com
 
 ### 커뮤니티

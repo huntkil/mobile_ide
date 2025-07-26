@@ -28,24 +28,27 @@ Samsung Galaxy Android 기기에서 Cursor AI IDE를 실행하기 위한 완전�
 # F-Droid에서 Termux 설치 후 실행
 
 # 2단계: 완벽 설치 스크립트 실행
-curl -sSL https://raw.githubusercontent.com/your-repo/mobile_ide/main/scripts/perfect_setup.sh | bash
+# 로컬 AppImage 설치 (권장)
+./scripts/termux_local_setup.sh
 
-# 또는 로컬에서 실행
-wget https://raw.githubusercontent.com/your-repo/mobile_ide/main/scripts/perfect_setup.sh
-chmod +x perfect_setup.sh
-./perfect_setup.sh
+# 또는 온라인 다운로드 설치
+./scripts/termux_complete_setup.sh
+
+# 또는 최소 설치
+./scripts/termux_minimal_setup.sh
 ```
 
 ### 🔧 문제 발생 시 복구
 
 ```bash
 # 완벽 복구 스크립트 실행
-curl -sSL https://raw.githubusercontent.com/your-repo/mobile_ide/main/scripts/perfect_restore.sh | bash
+./scripts/termux_perfect_restore.sh
 
-# 또는 로컬에서 실행
-wget https://raw.githubusercontent.com/your-repo/mobile_ide/main/scripts/perfect_restore.sh
-chmod +x perfect_restore.sh
-./perfect_restore.sh
+# 또는 안전 복구
+./scripts/termux_safe_restore.sh
+
+# 또는 기본 복구
+./scripts/restore.sh
 ```
 
 ### 3단계: Cursor AI 실행
@@ -59,12 +62,15 @@ cd ~/cursor-ide
 ```
 mobile_ide/
 ├── scripts/
-│   ├── perfect_setup.sh      # 🎯 완벽 설치 스크립트 (권장)
-│   ├── perfect_restore.sh    # 🔧 완벽 복구 스크립트
-│   ├── setup.sh              # 기본 설치 스크립트
-│   ├── launch.sh             # Cursor AI 실행 스크립트
-│   ├── restore.sh            # 환경 복구 스크립트
-│   └── optimize.sh           # 성능 최적화 스크립트
+│   ├── termux_local_setup.sh       # 🎯 로컬 AppImage 설치 (권장)
+│   ├── termux_complete_setup.sh    # 온라인 다운로드 완전 설치
+│   ├── termux_minimal_setup.sh     # 최소 설치
+│   ├── termux_perfect_restore.sh   # 🔧 완벽 복구 스크립트
+│   ├── termux_safe_restore.sh      # 안전 복구 스크립트
+│   ├── setup.sh                    # 기본 설치 스크립트
+│   ├── launch.sh                   # Cursor AI 실행 스크립트
+│   ├── restore.sh                  # 환경 복구 스크립트
+│   └── optimize.sh                 # 성능 최적화 스크립트
 ├── config/
 │   ├── cursor-config.json    # Cursor AI 설정
 │   ├── termux-config.sh      # Termux 환경 설정

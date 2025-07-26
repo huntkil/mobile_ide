@@ -79,7 +79,14 @@ Android Device
 ```
 mobile_ide/
 ├── scripts/
-│   ├── setup.sh                    # 기본 설치
+│   ├── termux_local_setup.sh       # 로컬 AppImage 설치 (권장)
+│   ├── termux_complete_setup.sh    # 온라인 다운로드 완전 설치
+│   ├── termux_minimal_setup.sh     # 최소 설치
+│   ├── termux_safe_setup.sh        # 안전 설치
+│   ├── termux_perfect_setup.sh     # 완벽 설치
+│   ├── termux_ultimate_setup.sh    # 최종 완벽 설치
+│   ├── termux_perfect_restore.sh   # 완벽 복구
+│   ├── termux_safe_restore.sh      # 안전 복구
 │   ├── setup_with_existing.sh      # 기존 환경 처리
 │   ├── install_from_local.sh       # 로컬 AppImage 설치
 │   ├── complete_setup_from_root.sh # 루트 AppImage 완벽 설치
@@ -95,6 +102,8 @@ mobile_ide/
 ├── docs/
 │   ├── installation.md             # 설치 가이드
 │   ├── troubleshooting.md          # 문제 해결
+│   ├── ERROR_DATABASE.md           # 오류 데이터베이스
+│   ├── SCRIPT_TEMPLATES.md         # 스크립트 템플릿
 │   └── DEVELOPMENT_GUIDE.md        # 개발 가이드
 ├── tests/
 │   └── compatibility.sh            # 호환성 테스트

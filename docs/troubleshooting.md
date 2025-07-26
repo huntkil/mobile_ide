@@ -92,25 +92,24 @@ cd /home/cursor-ide
 
 ### 1. 환경 불일치 문제
 
-#### 문제: WSL에서 Termux 스크립트 실행
+#### 문제: 잘못된 환경에서 스크립트 실행
 ```
 Error: Ubuntu 환경이 설치되지 않았습니다.
 ```
 
-**원인**: WSL 환경에서 Termux용 스크립트를 실행했을 때 발생
+**원인**: Android Termux 환경이 아닌 곳에서 Termux용 스크립트를 실행했을 때 발생
 
 **해결 방법**:
 ```bash
-# 1. 올바른 스크립트 사용
-# WSL 환경에서는 wsl_setup.sh 사용
-./scripts/wsl_setup.sh
-
-# 2. Termux 환경에서는 termux_*.sh 스크립트 사용
-# Android Termux에서만 실행 가능
-
-# 3. 환경 확인
-uname -a  # WSL인지 확인
+# 1. 환경 확인
 echo $TERMUX_VERSION  # Termux인지 확인
+uname -a  # 시스템 정보 확인
+
+# 2. Android Termux에서만 실행
+# 다른 환경에서는 실행 불가
+
+# 3. 올바른 스크립트 사용
+./scripts/termux_local_setup.sh  # 로컬 AppImage 설치
 ```
 
 ### 1. 설치 과정에서 발생하는 문제
