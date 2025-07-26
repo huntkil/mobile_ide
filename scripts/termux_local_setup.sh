@@ -560,12 +560,20 @@ cat > launch_cursor.sh << 'LAUNCH_EOF'
 #!/bin/bash
 cd /home/cursor-ide
 
-# 환경 변수 설정
+# 환경 변수 설정 (모든 변수 확장 문제 해결)
 export DISPLAY=:0
-export XDG_RUNTIME_DIR=/tmp/runtime-cursor
+export XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/tmp/runtime-cursor}
+export DBUS_SESSION_BUS_ADDRESS="unix:path=/tmp/dbus-session"
+export DBUS_SYSTEM_BUS_ADDRESS="unix:path=/tmp/dbus-system"
+export NO_AT_BRIDGE=1
+export DISABLE_NETWORK=1
+export ELECTRON_DISABLE_SECURITY_WARNINGS=1
+export ELECTRON_NO_ATTACH_CONSOLE=1
 
 # 디렉토리 생성 (변수 확장 문제 해결)
 mkdir -p "$XDG_RUNTIME_DIR"
+mkdir -p /tmp/dbus-session
+mkdir -p /tmp/dbus-system
 chmod 700 "$XDG_RUNTIME_DIR"
 
 # Xvfb 시작 (백그라운드)
