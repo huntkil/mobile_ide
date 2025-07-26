@@ -780,7 +780,20 @@ final_verification() {
         
         # proot-distro 설치된 배포판 확인
         log_info "설치된 배포판 확인:"
-        proot-distro list 2>/dev/null || log_warning "proot-distro 명령어 실행 불가"
+        if command -v proot-distro &> /dev/null; then
+            proot-distro list 2>/dev/null || log_warning "proot-distro list 명령어 실행 실패"
+        else
+            log_warning "proot-distro가 설치되지 않았습니다"
+        fi
+        
+        # Ubuntu 환경 진입 시도
+        log_info "Ubuntu 환경 진입 시도:"
+        if timeout 10s proot-distro login ubuntu -- echo "Ubuntu 환경 접근 성공" 2>/dev/null; then
+            log_success "Ubuntu 환경에 접근할 수 있습니다"
+            return 0
+        else
+            log_error "Ubuntu 환경에 접근할 수 없습니다"
+        fi
         
         return 1
     fi

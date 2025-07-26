@@ -77,19 +77,22 @@ Ubuntu 환경 경로: /data/data/com.termux/files/home/ubuntu
 
 **해결 방법**:
 ```bash
-# 1. 실제 Ubuntu 환경 경로 확인
-ls -la ~/.local/share/proot-distro/installed-rootfs/
-ls -la ~/.proot-distro/installed-rootfs/
-
-# 2. 설치된 배포판 확인
+# 1. proot-distro 상태 확인
 proot-distro list
 
-# 3. Ubuntu 환경 진입
+# 2. Ubuntu 환경 진입 시도
 proot-distro login ubuntu
 
-# 4. Cursor IDE 확인
-cd /home/cursor-ide
-ls -la
+# 3. 수동으로 Ubuntu 환경 경로 찾기
+find ~ -name "ubuntu" -type d 2>/dev/null
+
+# 4. proot-distro 설치 확인
+which proot-distro
+pkg list-installed | grep proot-distro
+
+# 5. Ubuntu 환경이 설치되어 있다면 직접 실행
+cd ~/cursor-ide
+./launch.sh
 ```
 
 ### 1. 환경 불일치 문제
