@@ -465,6 +465,12 @@ apt install -y libglib2.0-0 libpango-1.0-0 libcairo2 libgdk-pixbuf2.0-0 || {
     echo "일부 GTK 의존성 설치 실패, 계속 진행..."
 }
 
+# AppImage 추출 도구들 설치
+echo "AppImage 추출 도구 설치 중..."
+apt install -y squashfs-tools p7zip-full || {
+    echo "일부 추출 도구 설치 실패, 계속 진행..."
+}
+
 # Node.js 완전 설치 (COMPAT-001 완전 반영)
 echo "Node.js 완전 설치 중..."
 # 기존 Node.js 제거 (충돌 방지)
@@ -588,31 +594,94 @@ if [ "$download_success" = false ]; then
     fi
 fi
 
+# 파일 크기 확인 (최소 50MB 이상이어야 함)
+file_size=$(stat -c%s cursor.AppImage 2>/dev/null || echo "0")
+if [ "$file_size" -lt 52428800 ]; then  # 50MB = 52428800 bytes
+    echo "파일 크기가 너무 작습니다 ($file_size bytes). 파일이 손상되었을 수 있습니다."
+    rm -f cursor.AppImage
+    exit 1
+fi
+
+echo "파일 크기: $((file_size / 1024 / 1024))MB"
+
 # 실행 권한 부여
 chmod +x cursor.AppImage
 
-# AppImage 추출 (INSTALL-004)
+# AppImage 추출 (INSTALL-004) - 강화된 방법
 echo "AppImage 추출 중..."
-./cursor.AppImage --appimage-extract || {
-    echo "AppImage 추출 실패, 대체 방법 시도..."
-    ./cursor.AppImage --appimage-extract-and-run || {
-        echo "모든 추출 방법 실패"
-        exit 1
-    }
-}
+
+# 방법 1: 기본 추출
+if ./cursor.AppImage --appimage-extract 2>/dev/null; then
+    echo "기본 추출 성공"
+elif ./cursor.AppImage --appimage-extract-and-run 2>/dev/null; then
+    echo "추출 및 실행 방법 성공"
+else
+    echo "기본 추출 실패, 대체 방법 시도..."
+    
+    # 방법 2: squashfs-tools 사용
+    if command -v unsquashfs >/dev/null 2>&1; then
+        echo "squashfs-tools를 사용한 추출 시도..."
+        if unsquashfs -f -d squashfs-root cursor.AppImage 2>/dev/null; then
+            echo "squashfs-tools 추출 성공"
+        else
+            echo "squashfs-tools 추출 실패"
+        fi
+    fi
+    
+    # 방법 3: 7zip 사용
+    if command -v 7z >/dev/null 2>&1; then
+        echo "7zip을 사용한 추출 시도..."
+        if 7z x cursor.AppImage -osquashfs-root 2>/dev/null; then
+            echo "7zip 추출 성공"
+        else
+            echo "7zip 추출 실패"
+        fi
+    fi
+    
+    # 방법 4: tar 사용
+    echo "tar를 사용한 추출 시도..."
+    if tar -xf cursor.AppImage 2>/dev/null; then
+        echo "tar 추출 성공"
+    else
+        echo "tar 추출 실패"
+    fi
+fi
+
+# 추출 결과 확인
+if [ ! -d "squashfs-root" ] && [ ! -f "cursor" ]; then
+    echo "모든 추출 방법이 실패했습니다."
+    echo "파일 정보:"
+    file cursor.AppImage
+    echo "파일 헤더:"
+    head -c 100 cursor.AppImage | hexdump -C
+    exit 1
+fi
+
+# 실행 파일 찾기
+if [ -d "squashfs-root" ]; then
+    CURSOR_EXEC="squashfs-root/cursor"
+elif [ -f "cursor" ]; then
+    CURSOR_EXEC="cursor"
+else
+    echo "실행 파일을 찾을 수 없습니다"
+    exit 1
+fi
+
+# 실행 파일 권한 확인
+chmod +x "$CURSOR_EXEC" 2>/dev/null || true
 
 # 완전한 실행 스크립트 생성 (TROUBLESHOOTING.md 반영)
-cat > launch_cursor.sh << 'LAUNCH_EOF'
+cat > launch_cursor.sh << LAUNCH_EOF
 #!/bin/bash
 cd /home/cursor-ide
 export DISPLAY=:0
 export XDG_RUNTIME_DIR=/tmp/runtime-cursor
-mkdir -p $XDG_RUNTIME_DIR
-chmod 700 $XDG_RUNTIME_DIR
+mkdir -p \$XDG_RUNTIME_DIR
+chmod 700 \$XDG_RUNTIME_DIR
 
 # Xvfb 시작 (백그라운드)
 Xvfb :0 -screen 0 1200x800x24 -ac +extension GLX +render -noreset &
-XVFB_PID=$!
+XVFB_PID=\$!
 
 # 잠시 대기
 sleep 3
@@ -621,10 +690,10 @@ sleep 3
 xhost +local: 2>/dev/null || true
 
 # Cursor 실행
-./squashfs-root/cursor "$@"
+./$CURSOR_EXEC "\$@"
 
 # Xvfb 종료
-kill $XVFB_PID 2>/dev/null || true
+kill \$XVFB_PID 2>/dev/null || true
 LAUNCH_EOF
 
 chmod +x launch_cursor.sh
