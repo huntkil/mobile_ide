@@ -363,11 +363,23 @@ echo -e "${BLUE}[INFO]${NC} Node.js 18 LTS 설치 중..."
 curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
 apt install -y nodejs
 
-# npm 업데이트
-npm install -g npm@latest
+# npm 호환성 문제 해결
+echo -e "${BLUE}[INFO]${NC} npm 호환성 문제 해결 중..."
+# Node.js 18과 호환되는 npm 버전으로 다운그레이드
+npm install -g npm@10.8.2 || {
+    echo -e "${YELLOW}[WARNING]${NC} npm 버전 변경 실패, 기본 버전 사용..."
+    # npm 캐시 정리
+    npm cache clean --force 2>/dev/null || true
+}
 
-# 추가 개발 도구
-npm install -g yarn typescript ts-node
+# npm 캐시 정리
+npm cache clean --force 2>/dev/null || true
+
+# 전역 패키지 설치 (호환성 문제 방지)
+echo -e "${BLUE}[INFO]${NC} 전역 패키지 설치 중..."
+npm install -g yarn@1.22.19 typescript@5.3.3 ts-node@10.9.2 || {
+    echo -e "${YELLOW}[WARNING]${NC} 일부 전역 패키지 설치 실패, 계속 진행..."
+}
 
 # 작업 디렉토리 생성
 mkdir -p /home/cursor-ide
