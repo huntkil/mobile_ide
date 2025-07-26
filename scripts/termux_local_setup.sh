@@ -556,17 +556,17 @@ fi
 chmod +x "\$CURSOR_EXEC" 2>/dev/null || true
 
 # 완전한 실행 스크립트 생성
-cat > launch_cursor.sh << LAUNCH_EOF
+cat > launch_cursor.sh << 'LAUNCH_EOF'
 #!/bin/bash
 cd /home/cursor-ide
 export DISPLAY=:0
 export XDG_RUNTIME_DIR=/tmp/runtime-cursor
-mkdir -p \$XDG_RUNTIME_DIR
-chmod 700 \$XDG_RUNTIME_DIR
+mkdir -p "$XDG_RUNTIME_DIR"
+chmod 700 "$XDG_RUNTIME_DIR"
 
 # Xvfb 시작 (백그라운드)
 Xvfb :0 -screen 0 1200x800x24 -ac +extension GLX +render -noreset &
-XVFB_PID=\$!
+XVFB_PID=$!
 
 # 잠시 대기
 sleep 3
@@ -574,11 +574,22 @@ sleep 3
 # X11 권한 설정
 xhost +local: 2>/dev/null || true
 
-# Cursor 실행
-./\$CURSOR_EXEC "\$@"
+# Cursor 실행 (경로 확인)
+if [ -f "./squashfs-root/cursor" ]; then
+    echo "추출된 Cursor AI 실행..."
+    ./squashfs-root/cursor "$@"
+elif [ -f "./cursor.AppImage" ]; then
+    echo "AppImage 직접 실행..."
+    ./cursor.AppImage "$@"
+else
+    echo "Cursor AI 실행 파일을 찾을 수 없습니다."
+    echo "현재 디렉토리 내용:"
+    ls -la
+    exit 1
+fi
 
 # Xvfb 종료
-kill \$XVFB_PID 2>/dev/null || true
+kill $XVFB_PID 2>/dev/null || true
 LAUNCH_EOF
 
 chmod +x launch_cursor.sh
@@ -741,22 +752,37 @@ EOF
 final_verification() {
     log_info "최종 검증 중..."
     
-    # Ubuntu 환경 확인
+    # Ubuntu 환경 확인 (더 강화된 검증)
     if [ ! -d "$HOME/ubuntu" ]; then
         log_error "Ubuntu 환경이 설치되지 않았습니다."
+        log_info "Ubuntu 환경 경로: $HOME/ubuntu"
+        log_info "현재 디렉토리: $(pwd)"
+        log_info "홈 디렉토리: $HOME"
         return 1
     fi
     
-    # Cursor AI 확인
-    if [ ! -f "$UBUNTU_HOME/cursor-ide/launch_cursor.sh" ]; then
+    # Ubuntu 환경 내부 확인
+    if [ ! -d "$HOME/ubuntu/home" ]; then
+        log_error "Ubuntu 환경 내부 구조가 올바르지 않습니다."
+        log_info "Ubuntu 디렉토리 내용:"
+        ls -la "$HOME/ubuntu/" 2>/dev/null || log_warning "Ubuntu 디렉토리 접근 불가"
+        return 1
+    fi
+    
+    # Cursor AI 확인 (경로 수정)
+    local cursor_path="$HOME/ubuntu/home/cursor-ide/launch_cursor.sh"
+    if [ ! -f "$cursor_path" ]; then
         log_error "Cursor AI가 설치되지 않았습니다."
+        log_info "예상 경로: $cursor_path"
+        log_info "Ubuntu home 디렉토리 내용:"
+        ls -la "$HOME/ubuntu/home/" 2>/dev/null || log_warning "Ubuntu home 디렉토리 접근 불가"
         return 1
     fi
     
     # 실행 권한 확인
-    if [ ! -x "$UBUNTU_HOME/cursor-ide/launch_cursor.sh" ]; then
+    if [ ! -x "$cursor_path" ]; then
         log_warning "실행 권한 수정 중..."
-        chmod +x "$UBUNTU_HOME/cursor-ide/launch_cursor.sh"
+        chmod +x "$cursor_path"
     fi
     
     log_success "최종 검증 완료"

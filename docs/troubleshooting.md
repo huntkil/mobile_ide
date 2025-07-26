@@ -2,6 +2,117 @@
 
 ## 🔍 일반적인 문제들
 
+### 0. launch_cursor.sh 스크립트 오류
+
+#### 문제: mkdir/chmod 명령어 오류 및 실행 파일 없음
+```
+mkdir: missing operand
+chmod: missing operand after '700'
+./squashfs-root/cursor: No such file or directory
+```
+
+**원인**: `launch_cursor.sh` 스크립트에서 변수 확장 문제 및 경로 확인 부족
+
+**해결 방법**:
+```bash
+# 1. Ubuntu 환경 진입
+proot-distro login ubuntu
+
+# 2. Cursor IDE 디렉토리 확인
+cd /home/cursor-ide
+ls -la
+
+# 3. 수정된 launch_cursor.sh 생성
+cat > launch_cursor.sh << 'EOF'
+#!/bin/bash
+cd /home/cursor-ide
+export DISPLAY=:0
+export XDG_RUNTIME_DIR=/tmp/runtime-cursor
+mkdir -p "$XDG_RUNTIME_DIR"
+chmod 700 "$XDG_RUNTIME_DIR"
+
+# Xvfb 시작 (백그라운드)
+Xvfb :0 -screen 0 1200x800x24 -ac +extension GLX +render -noreset &
+XVFB_PID=$!
+
+# 잠시 대기
+sleep 3
+
+# X11 권한 설정
+xhost +local: 2>/dev/null || true
+
+# Cursor 실행 (경로 확인)
+if [ -f "./squashfs-root/cursor" ]; then
+    echo "추출된 Cursor AI 실행..."
+    ./squashfs-root/cursor "$@"
+elif [ -f "./cursor.AppImage" ]; then
+    echo "AppImage 직접 실행..."
+    ./cursor.AppImage "$@"
+else
+    echo "Cursor AI 실행 파일을 찾을 수 없습니다."
+    echo "현재 디렉토리 내용:"
+    ls -la
+    exit 1
+fi
+
+# Xvfb 종료
+kill $XVFB_PID 2>/dev/null || true
+EOF
+
+chmod +x launch_cursor.sh
+
+# 4. 실행
+./launch_cursor.sh
+```
+
+### 1. 검증 스크립트 버그 문제
+
+#### 문제: Ubuntu 환경 설치 완료 후 최종 검증 실패
+```
+Error: Ubuntu 환경이 설치되지 않았습니다.
+```
+
+**원인**: Termux 환경에서 `termux_local_setup.sh` 실행 시 검증 스크립트의 경로 확인 버그
+
+**해결 방법**:
+```bash
+# 1. 실제 설치 상태 확인
+ls -la ~/ubuntu
+ls -la ~/ubuntu/home/cursor-ide/
+
+# 2. 수동으로 Cursor AI 실행
+cd ~/cursor-ide
+./launch.sh
+
+# 3. 또는 Ubuntu 환경에서 직접 실행
+proot-distro login ubuntu
+cd /home/cursor-ide
+./launch_cursor.sh
+```
+
+### 1. 환경 불일치 문제
+
+#### 문제: WSL에서 Termux 스크립트 실행
+```
+Error: Ubuntu 환경이 설치되지 않았습니다.
+```
+
+**원인**: WSL 환경에서 Termux용 스크립트를 실행했을 때 발생
+
+**해결 방법**:
+```bash
+# 1. 올바른 스크립트 사용
+# WSL 환경에서는 wsl_setup.sh 사용
+./scripts/wsl_setup.sh
+
+# 2. Termux 환경에서는 termux_*.sh 스크립트 사용
+# Android Termux에서만 실행 가능
+
+# 3. 환경 확인
+uname -a  # WSL인지 확인
+echo $TERMUX_VERSION  # Termux인지 확인
+```
+
 ### 1. 설치 과정에서 발생하는 문제
 
 #### 문제: "Permission denied" 오류
