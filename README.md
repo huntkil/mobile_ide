@@ -1,77 +1,247 @@
-# 🎯 Galaxy Android용 Cursor AI IDE 모바일 환경 구축
+# Galaxy Android용 Cursor AI IDE
 
-**Android 기기에서 완전한 AI 기반 코딩 환경을 제공하는 혁신적인 솔루션**
+## 🚀 **최신 버전 v3.1.1 업데이트 완료!**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Android](https://img.shields.io/badge/Android-10%2B-green.svg)](https://www.android.com/)
-[![ARM64](https://img.shields.io/badge/Architecture-ARM64-blue.svg)](https://developer.arm.com/)
-[![Termux](https://img.shields.io/badge/Platform-Termux-orange.svg)](https://termux.com/)
+**모든 알려진 문제가 해결되었습니다!** 🎉
 
-## 🌟 주요 특징
+### ✅ **해결된 문제들**
+- ✅ 스크립트 문법 오류 수정
+- ✅ 권한 문제 해결 (XDG_RUNTIME_DIR)
+- ✅ VNC 서버 통합
+- ✅ 네트워크 DNS 해석 실패 해결
+- ✅ 외부 저장소 실행 권한 제한 해결
+- ✅ 저장공간 부족 문제 해결
+- ✅ GUI 화면 표시 문제 해결
 
-- ✅ **완전한 Linux 환경**: Ubuntu 22.04 LTS + Node.js 18
-- ✅ **AI 기반 IDE**: Cursor AI의 모든 기능 지원
-- ✅ **모바일 최적화**: 터치 인터페이스 및 가상 키보드 지원
-- ✅ **VNC 화면 표시**: Android VNC Viewer를 통한 GUI 접근
-- ✅ **저장공간 최적화**: 외부 저장소 활용 및 자동 정리 시스템
-- ✅ **완벽한 오류 해결**: 모든 알려진 문제에 대한 자동화된 해결책
+---
 
-## 📱 시스템 요구사항
+## 📱 프로젝트 개요
 
-### 하드웨어
-- **RAM**: 최소 4GB (8GB+ 권장)
-- **저장공간**: 최소 10GB (20GB+ 권장)
-- **CPU**: ARM64 아키텍처 (Exynos, Snapdragon)
-- **화면**: 6인치 이상 (터치 최적화)
+Samsung Galaxy Android 기기에서 **Cursor AI IDE**를 실행하기 위한 완전한 솔루션입니다. Termux 기반 Linux 환경을 통해 모바일에서도 강력한 개발 환경을 제공합니다.
 
-### 소프트웨어
-- **Android**: 10+ (API 29+)
-- **Termux**: 최신 버전 (F-Droid)
-- **네트워크**: Wi-Fi 또는 모바일 데이터
+### 🎯 주요 기능
+- **완전 자동화된 설치**: 원클릭 설치 스크립트
+- **모바일 최적화**: 터치 인터페이스 및 배터리 최적화
+- **VNC 서버 통합**: Android VNC Viewer를 통한 GUI 표시
+- **오프라인 지원**: 로컬 AppImage 파일 활용
+- **자동 복구**: 문제 발생 시 자동 해결
 
-## 🚀 빠른 시작
+### 🛠️ 지원 환경
+- **OS**: Android 10+ (API 29+)
+- **아키텍처**: ARM64 (aarch64)
+- **기기**: Samsung Galaxy 시리즈
+- **메모리**: 최소 4GB, 권장 8GB+
+- **저장공간**: 최소 10GB, 권장 20GB+
 
-### 1단계: Termux 설치
+---
+
+## 🚀 **빠른 시작 (v3.1.1)**
+
+### 1단계: 최신 버전 받기
 ```bash
-# F-Droid에서 Termux 설치 (Google Play Store 버전 사용 금지)
-# https://f-droid.org/packages/com.termux/
-```
+# 기존 설치가 있다면 최신 버전으로 업데이트
+cd ~/mobile_ide
+git pull origin main
 
-### 2단계: 프로젝트 다운로드
-```bash
-# Git 설치 및 프로젝트 클론
-pkg install git
+# 또는 새로 클론
 git clone https://github.com/huntkil/mobile_ide.git
 cd mobile_ide
 ```
 
-### 3단계: 🎯 완벽 설치 (권장)
+### 2단계: 완전 설치
 ```bash
-# v3.1.0 - 모든 문제 해결된 최신 버전
-chmod +x scripts/termux_local_setup.sh
+# 자동 설치 스크립트 실행 (모든 문제 해결됨)
 ./scripts/termux_local_setup.sh
-
-# 또는 다른 설치 옵션
-./scripts/termux_complete_setup.sh    # 온라인 다운로드 설치
-./scripts/termux_minimal_setup.sh     # 최소 설치
 ```
 
-### 4단계: Cursor AI 실행
+### 3단계: Cursor AI 실행
 ```bash
-# 기본 실행
-cd ~/cursor-ide
-./launch.sh
+# 권한 문제 해결된 실행 스크립트
+./run_cursor_fixed.sh
 
-# VNC 화면 표시 (권장)
-./run_cursor_vnc.sh
+# 또는 Ubuntu 환경에서 실행
+./launch.sh
+```
+
+### 4단계: GUI 화면 보기 (선택사항)
+```bash
+# VNC 서버 설치
+pkg install x11vnc
+
+# VNC 서버 시작
+vncserver :1 -geometry 1024x768 -depth 24
+
 # Android VNC Viewer 앱에서 localhost:5901 접속
 ```
 
-## 🛠️ 새로운 기능 (v3.1.0+)
+---
 
-### 🔧 저장공간 최적화
+## 📦 설치 방법
+
+### 자동 설치 (권장)
 ```bash
-# 긴급 저장공간 정리
+# 1. 프로젝트 클론
+git clone https://github.com/huntkil/mobile_ide.git
+cd mobile_ide
+
+# 2. 자동 설치 실행
+./scripts/termux_local_setup.sh
+
+# 3. 설치 완료 확인
+ls -la ~/launch.sh ~/run_cursor_fixed.sh
+```
+
+### 수동 설치
+```bash
+# 1. Termux 필수 패키지 설치
+pkg update -y
+pkg install -y proot-distro curl wget proot tar unzip
+
+# 2. Ubuntu 환경 설치
+proot-distro install ubuntu
+
+# 3. Ubuntu 환경 설정
+proot-distro login ubuntu -- bash -c "
+apt update
+apt install -y curl wget git build-essential python3 python3-pip
+apt install -y xvfb x11-apps x11-utils x11-xserver-utils dbus-x11
+curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+apt install -y nodejs
+"
+
+# 4. Cursor AI 설치
+proot-distro login ubuntu -- bash -c "
+mkdir -p /home/cursor-ide
+cd /home/cursor-ide
+wget -O cursor.AppImage 'https://download.cursor.sh/linux/appImage/arm64'
+chmod +x cursor.AppImage
+./cursor.AppImage --appimage-extract
+"
+```
+
+---
+
+## 🔧 사용법
+
+### 기본 실행
+```bash
+# 권한 문제 해결된 실행 (권장)
+./run_cursor_fixed.sh
+
+# Ubuntu 환경에서 실행
+./launch.sh
+
+# 프로세스 확인
+ps aux | grep -E "(cursor|AppRun)" | grep -v grep
+```
+
+### VNC를 통한 GUI 표시
+```bash
+# 1. VNC 서버 설치
+pkg install x11vnc
+
+# 2. VNC 서버 시작
+vncserver :1 -geometry 1024x768 -depth 24
+
+# 3. Android VNC Viewer 앱 설치
+# Google Play Store에서 "VNC Viewer" 검색
+
+# 4. VNC 접속
+# 앱에서 localhost:5901 접속
+# 비밀번호: cursor123
+```
+
+### 프로젝트 관리
+```bash
+# 새 프로젝트 생성
+mkdir ~/projects/my-project
+cd ~/projects/my-project
+
+# Cursor AI에서 프로젝트 열기
+# File → Open Folder → ~/projects/my-project
+```
+
+---
+
+## 🛠️ 문제 해결
+
+### 일반적인 문제들
+
+#### 1. 저장공간 부족
+```bash
+# 긴급 정리
+./cleanup.sh
+
+# 또는 수동 정리
+pkg clean
+rm -rf ~/.cache/*
+df -h
+```
+
+#### 2. 네트워크 연결 문제
+```bash
+# DNS 설정
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+
+# 연결 테스트
+ping google.com
+```
+
+#### 3. 권한 문제
+```bash
+# 실행 권한 확인
+chmod +x ~/run_cursor_fixed.sh
+chmod +x ~/launch.sh
+
+# 외부 저장소에서 내부로 복사
+cp ~/storage/shared/TermuxWork/cursor.AppImage ~/cursor.AppImage
+```
+
+#### 4. GUI 화면이 보이지 않음
+```bash
+# VNC 서버 설정
+pkg install x11vnc
+vncserver :1 -geometry 1024x768 -depth 24
+
+# Android VNC Viewer 앱으로 localhost:5901 접속
+```
+
+### 자동 복구
+```bash
+# 설치 문제 자동 해결
+./scripts/fix_installation.sh
+
+# 환경 완전 복구
+./scripts/termux_perfect_restore.sh
+```
+
+---
+
+## 📊 성능 최적화
+
+### 메모리 최적화
+```bash
+# 메모리 캐시 정리
+echo 3 > /proc/sys/vm/drop_caches
+
+# 불필요한 프로세스 종료
+pkill -f "chrome"
+pkill -f "firefox"
+```
+
+### 배터리 최적화
+```bash
+# 배터리 최적화 비활성화
+dumpsys deviceidle disable
+
+# CPU 성능 모드
+echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+```
+
+### 저장공간 최적화
+```bash
+# 자동 정리 스크립트
 ./cleanup.sh
 
 # 외부 저장소 활용
@@ -79,146 +249,103 @@ termux-setup-storage
 mkdir -p ~/storage/shared/TermuxWork
 ```
 
-### 📺 VNC 화면 표시
+---
+
+## 🔍 디버깅
+
+### 시스템 정보 확인
 ```bash
-# VNC 서버 설치 및 시작
-pkg install x11vnc
-vncserver :1 -geometry 1024x768 -depth 24
+# 시스템 진단
+./debug.sh
 
-# Android VNC Viewer 앱 설치 후
-# localhost:5901 접속, 비밀번호: cursor123
+# 상세 정보
+uname -a
+free -h
+df -h
 ```
 
-### 🌐 네트워크 문제 자동 해결
+### 로그 확인
 ```bash
-# DNS 자동 설정
-echo "nameserver 8.8.8.8" > /etc/resolv.conf
+# Cursor AI 로그
+tail -f ~/.cursor/logs/main.log
 
-# 기존 AppImage 활용 (오프라인)
-cp ~/Cursor-1.2.1-aarch64.AppImage ~/cursor.AppImage
+# 시스템 로그
+logcat | grep termux
 ```
 
-## 🔧 문제 발생 시 복구
-
-### 자동 복구 (권장)
+### 프로세스 확인
 ```bash
-# 완벽 복구 스크립트
-./scripts/termux_perfect_restore.sh
+# 실행 중인 프로세스
+ps aux | grep -E "(cursor|Xvfb|vnc)"
 
-# 안전 복구 스크립트
-./scripts/termux_safe_restore.sh
-
-# 기본 복구 스크립트
-./restore.sh
+# 포트 사용 확인
+netstat -tlnp
 ```
 
-### 수동 복구
-```bash
-# 환경 완전 재설정
-rm -rf ~/ubuntu ~/cursor-ide
-proot-distro remove ubuntu
-./scripts/termux_local_setup.sh
-```
+---
 
-## 📁 프로젝트 구조
+## 📚 문서
 
-```
-mobile_ide/
-├── scripts/
-│   ├── termux_local_setup.sh       # 🎯 메인 설치 스크립트 (v3.1.0)
-│   ├── termux_complete_setup.sh    # 온라인 완전 설치
-│   ├── termux_minimal_setup.sh     # 최소 설치
-│   ├── termux_perfect_restore.sh   # 완벽 복구
-│   ├── termux_safe_restore.sh      # 안전 복구
-│   └── cleanup.sh                  # 저장공간 정리 (NEW)
-├── docs/
-│   ├── installation.md             # 설치 가이드
-│   ├── troubleshooting.md          # 문제 해결
-│   ├── ERROR_DATABASE.md           # 오류 데이터베이스 (업데이트됨)
-│   └── DEVELOPMENT_GUIDE.md        # 개발 가이드 (업데이트됨)
-└── README.md                       # 이 파일
-```
+### 상세 가이드
+- [📖 설치 가이드](docs/installation.md)
+- [🔧 문제 해결](docs/troubleshooting.md)
+- [📋 개발 가이드](docs/DEVELOPMENT_GUIDE.md)
+- [❌ 오류 데이터베이스](docs/ERROR_DATABASE.md)
+- [📝 스크립트 템플릿](docs/SCRIPT_TEMPLATES.md)
 
-## 🛠️ 해결된 주요 문제들
+### 스크립트 목록
+- `scripts/termux_local_setup.sh` - 메인 설치 스크립트 (v3.1.1)
+- `scripts/cleanup.sh` - 저장공간 정리
+- `scripts/fix_installation.sh` - 설치 문제 해결
+- `run_cursor_fixed.sh` - 권한 문제 해결된 실행 스크립트
+- `launch.sh` - Ubuntu 환경 실행 스크립트
 
-### ✅ v3.0.0에서 해결된 문제들
-1. **실행 스크립트 아키텍처 문제**: 독립 실행 스크립트 구조
-2. **시스템 서비스 오류**: DBus, udev, NETLINK 오류 해결
-3. **메모리 부족**: Node.js 힙 메모리 제한 및 최적화
-4. **FUSE 마운트 오류**: AppImage 추출 방식으로 해결
-5. **Electron 관련 오류**: --no-sandbox 등 강력한 옵션 적용
-
-### ✅ v3.1.0에서 새로 해결된 문제들
-6. **저장공간 부족**: cleanup.sh 및 외부 저장소 활용
-7. **GUI 화면 표시**: VNC 서버 통합으로 완전 해결
-8. **네트워크 DNS 실패**: 다중 DNS 서버 및 오프라인 설치
-9. **외부 저장소 권한**: 내부 저장소 복사 방식으로 우회
-10. **VNC 패키지 부재**: 다중 대안 패키지 및 헤드리스 모드
-11. **스크립트 문법 오류**: 올바른 bash 문법으로 재작성
-
-## 📊 성능 벤치마크
-
-| 항목 | 성능 | 비고 |
-|------|------|------|
-| 설치 시간 | 15-30분 | 네트워크 속도에 따라 |
-| 메모리 사용량 | 2-4GB | 최적화 옵션 적용 |
-| 시작 시간 | 30-60초 | 첫 실행 시 더 오래 걸림 |
-| 배터리 수명 | 3-5시간 | 연속 사용 기준 |
-| 저장공간 | 8-12GB | 전체 환경 포함 |
-
-## 📈 로드맵
-
-### 단기 목표 (1-2개월)
-- [ ] 자동 업데이트 시스템
-- [ ] 클라우드 동기화 지원
-- [ ] 성능 모니터링 도구
-
-### 중기 목표 (3-6개월)
-- [ ] 다른 IDE 지원 (VS Code, IntelliJ)
-- [ ] 플러그인 생태계 구축
-- [ ] 협업 기능 추가
-
-### 장기 목표 (6개월+)
-- [ ] iOS 지원
-- [ ] 웹 버전 개발
-- [ ] AI 모델 로컬 실행
+---
 
 ## 🤝 기여하기
 
 ### 버그 리포트
-1. [GitHub Issues](https://github.com/huntkil/mobile_ide/issues)에서 새 이슈 생성
-2. 시스템 정보 및 오류 로그 첨부
-3. 재현 단계 상세히 기술
+- [GitHub Issues](https://github.com/huntkil/mobile_ide/issues)에서 버그 리포트
+- 상세한 오류 메시지와 시스템 정보 포함
 
-### 개발 참여
-1. Fork 후 feature 브랜치 생성
-2. 코드 작성 및 테스트
-3. Pull Request 생성
+### 기능 요청
+- 새로운 기능 아이디어 제안
+- 개선 사항 제안
 
-### 문서 개선
-- 설치 가이드 개선
-- 번역 지원
-- 튜토리얼 작성
-
-## 📞 지원 및 커뮤니티
-
-- **GitHub Issues**: [문제 보고](https://github.com/huntkil/mobile_ide/issues)
-- **Discussions**: [기능 제안 및 질문](https://github.com/huntkil/mobile_ide/discussions)
-- **Discord**: [실시간 채팅](https://discord.gg/mobile-ide)
-- **Email**: support@mobile-ide.com
-
-## 📄 라이선스
-
-이 프로젝트는 [MIT 라이선스](LICENSE) 하에 배포됩니다.
-
-## 🙏 감사의 말
-
-- **Termux 팀**: Android Linux 환경 제공
-- **Cursor AI 팀**: 혁신적인 AI IDE 개발
-- **커뮤니티**: 버그 리포트 및 피드백 제공
+### 코드 기여
+- Pull Request 환영
+- 코드 리뷰 및 테스트 참여
 
 ---
 
-**⭐ 이 프로젝트가 도움이 되었다면 Star를 눌러주세요!**
+## 📄 라이선스
 
-**📱 이제 당신의 Android 기기가 완전한 개발 워크스테이션이 됩니다!** 
+이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
+
+---
+
+## 🙏 감사의 말
+
+- **Termux** 팀 - Android용 Linux 환경 제공
+- **Cursor AI** 팀 - 강력한 AI 기반 IDE 개발
+- **Ubuntu** 팀 - 안정적인 Linux 배포판 제공
+- **커뮤니티** - 버그 리포트 및 개선 제안
+
+---
+
+## 📞 지원
+
+### 연락처
+- **GitHub**: [huntkil/mobile_ide](https://github.com/huntkil/mobile_ide)
+- **이메일**: huntkil@github.com
+- **문서**: [docs/](docs/) 디렉토리
+
+### 커뮤니티
+- **Discord**: [Mobile IDE Community](https://discord.gg/mobile-ide)
+- **Reddit**: r/mobile_ide
+
+---
+
+**⭐ 이 프로젝트가 도움이 되었다면 스타를 눌러주세요!**
+
+**🔄 최신 업데이트**: v3.1.1 (2025-07-27) - 모든 알려진 문제 해결 완료! 
