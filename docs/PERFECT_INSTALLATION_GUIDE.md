@@ -111,6 +111,19 @@ pkill vncserver
 ./start_vnc.sh
 ```
 
+### Ubuntu 환경 설치 실패
+```bash
+# 방법 1: 반복 설치 시도 (기존 환경 유지)
+./scripts/fix_ubuntu_installation.sh
+
+# 방법 2: 완전 삭제 후 재설치 (모든 데이터 삭제)
+./scripts/clean_install_ubuntu.sh
+
+# 방법 3: 완벽 설치 스크립트에서 선택
+./scripts/perfect_cursor_setup.sh
+# Ubuntu 설치 실패 시 1, 2, 3 중 선택
+```
+
 ---
 
 ## 📊 **설치된 구성 요소**
@@ -210,6 +223,12 @@ echo 3 > /proc/sys/vm/drop_caches
 - **개발 가이드**: `docs/DEVELOPMENT_GUIDE.md`
 - **스크립트 템플릿**: `docs/SCRIPT_TEMPLATES.md`
 
+### 🛠️ **문제 해결 스크립트**
+- **`scripts/fix_ubuntu_installation.sh`**: Ubuntu 설치 실패 반복 해결
+- **`scripts/clean_install_ubuntu.sh`**: Ubuntu 환경 완전 삭제 후 재설치
+- **`scripts/cleanup.sh`**: 저장공간 정리
+- **`scripts/perfect_cursor_setup.sh`**: 완벽한 설치 (선택형 문제 해결)
+
 ### 🆘 **지원 및 문의**
 - **GitHub Issues**: [프로젝트 이슈 페이지](https://github.com/huntkil/mobile_ide/issues)
 - **이메일**: huntkil@github.com
@@ -244,6 +263,31 @@ git pull origin main
 
 # 새로운 설치 스크립트 실행
 ./scripts/perfect_cursor_setup.sh
+```
+
+## 🛠️ **고급 문제 해결**
+
+### Ubuntu 환경 완전 재설치
+```bash
+# 모든 Ubuntu 환경과 관련 파일 완전 삭제 후 재설치
+./scripts/clean_install_ubuntu.sh
+
+# 주의: 모든 데이터가 삭제됩니다!
+# - Ubuntu 환경
+# - Cursor AI
+# - VNC 설정
+# - 모든 프로젝트 파일
+```
+
+### Ubuntu 설치 실패 선택형 해결
+```bash
+# 완벽 설치 스크립트 실행
+./scripts/perfect_cursor_setup.sh
+
+# Ubuntu 설치 실패 시 선택 옵션:
+# 1. 반복 설치 시도 (기존 환경 유지)
+# 2. 완전 삭제 후 재설치 (모든 데이터 삭제)
+# 3. 수동 해결
 ```
 
 ### 수동 업데이트

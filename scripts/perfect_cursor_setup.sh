@@ -179,24 +179,66 @@ install_ubuntu_environment() {
         log_error "Ubuntu 환경 설치 실패"
         log_info "자동 해결 스크립트를 실행합니다..."
         
-        # Ubuntu 설치 실패 자동 해결 스크립트 실행
-        if [ -f "./scripts/fix_ubuntu_installation.sh" ]; then
-            log_info "Ubuntu 설치 실패 자동 해결 스크립트 실행 중..."
-            chmod +x ./scripts/fix_ubuntu_installation.sh
-            if ./scripts/fix_ubuntu_installation.sh; then
-                log_success "Ubuntu 환경 설치 실패 문제 해결 완료"
-                return 0
-            else
-                log_error "Ubuntu 환경 설치 실패 문제 해결 실패"
+        log_info "Ubuntu 설치 실패. 해결 방법을 선택하세요:"
+        echo ""
+        echo "1. 반복 설치 시도 (기존 환경 유지)"
+        echo "2. 완전 삭제 후 재설치 (모든 데이터 삭제)"
+        echo "3. 수동 해결"
+        echo ""
+        read -p "선택하세요 (1/2/3): " -n 1 -r
+        echo
+        
+        case $REPLY in
+            1)
+                # 반복 설치 시도
+                if [ -f "./scripts/fix_ubuntu_installation.sh" ]; then
+                    log_info "Ubuntu 설치 실패 자동 해결 스크립트 실행 중..."
+                    chmod +x ./scripts/fix_ubuntu_installation.sh
+                    if ./scripts/fix_ubuntu_installation.sh; then
+                        log_success "Ubuntu 환경 설치 실패 문제 해결 완료"
+                        return 0
+                    else
+                        log_error "Ubuntu 환경 설치 실패 문제 해결 실패"
+                        return 1
+                    fi
+                else
+                    log_error "Ubuntu 설치 실패 자동 해결 스크립트를 찾을 수 없습니다."
+                    return 1
+                fi
+                ;;
+            2)
+                # 완전 삭제 후 재설치
+                if [ -f "./scripts/clean_install_ubuntu.sh" ]; then
+                    log_info "Ubuntu 환경 완전 삭제 후 재설치 스크립트 실행 중..."
+                    chmod +x ./scripts/clean_install_ubuntu.sh
+                    if ./scripts/clean_install_ubuntu.sh; then
+                        log_success "Ubuntu 환경 완전 삭제 후 재설치 완료"
+                        return 0
+                    else
+                        log_error "Ubuntu 환경 완전 삭제 후 재설치 실패"
+                        return 1
+                    fi
+                else
+                    log_error "Ubuntu 환경 완전 삭제 후 재설치 스크립트를 찾을 수 없습니다."
+                    return 1
+                fi
+                ;;
+            3)
+                # 수동 해결
+                log_info "수동 해결 방법:"
+                echo "1. chmod +x scripts/fix_ubuntu_installation.sh"
+                echo "2. ./scripts/fix_ubuntu_installation.sh"
+                echo ""
+                echo "또는"
+                echo "1. chmod +x scripts/clean_install_ubuntu.sh"
+                echo "2. ./scripts/clean_install_ubuntu.sh"
                 return 1
-            fi
-        else
-            log_error "Ubuntu 설치 실패 자동 해결 스크립트를 찾을 수 없습니다."
-            log_info "수동으로 다음 명령어를 실행하세요:"
-            echo "  chmod +x scripts/fix_ubuntu_installation.sh"
-            echo "  ./scripts/fix_ubuntu_installation.sh"
-            return 1
-        fi
+                ;;
+            *)
+                log_error "잘못된 선택입니다."
+                return 1
+                ;;
+        esac
     fi
 }
 
