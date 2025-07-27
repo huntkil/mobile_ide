@@ -37,18 +37,18 @@ log_error() {
 optimize_system() {
     log_info "시스템 최적화 중..."
     
-    # 메모리 캐시 정리
-    echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+    # 메모리 캐시 정리 (권한 문제 무시)
+    echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || log_warning "메모리 캐시 정리 권한 없음 (무시됨)"
     
-    # 불필요한 프로세스 종료
-    pkill -f "Xvfb" 2>/dev/null || true
-    pkill -f "cursor" 2>/dev/null || true
+    # 불필요한 프로세스 종료 (권한 문제 무시)
+    pkill -f "Xvfb" 2>/dev/null || log_warning "Xvfb 프로세스 종료 실패 (무시됨)"
+    pkill -f "cursor" 2>/dev/null || log_warning "cursor 프로세스 종료 실패 (무시됨)"
     
-    # 저장공간 정리
-    pkg clean 2>/dev/null || true
-    pkg autoclean 2>/dev/null || true
-    rm -rf /tmp/* 2>/dev/null || true
-    rm -rf ~/.cache/* 2>/dev/null || true
+    # 저장공간 정리 (권한 문제 무시)
+    pkg clean 2>/dev/null || log_warning "패키지 캐시 정리 실패 (무시됨)"
+    pkg autoclean 2>/dev/null || log_warning "패키지 자동 정리 실패 (무시됨)"
+    rm -rf /tmp/* 2>/dev/null || log_warning "임시 파일 정리 실패 (무시됨)"
+    rm -rf ~/.cache/* 2>/dev/null || log_warning "사용자 캐시 정리 실패 (무시됨)"
     
     log_success "시스템 최적화 완료"
 }
