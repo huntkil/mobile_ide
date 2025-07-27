@@ -74,15 +74,15 @@ install_required_packages() {
     log_info "필수 패키지 설치 중..."
     
     # Termux 패키지 업데이트
-    pkg update -y
+    pkg update -y || log_warning "패키지 업데이트 실패 (무시됨)"
     
     # 필수 패키지 설치
-    pkg install -y proot-distro curl wget proot tar unzip git
+    pkg install -y proot-distro curl wget proot tar unzip git || log_warning "일부 패키지 설치 실패 (무시됨)"
     
     # Ubuntu 설치 확인
     if ! proot-distro list | grep -q "ubuntu"; then
         log_info "Ubuntu 환경 설치 중..."
-        proot-distro install ubuntu
+        proot-distro install ubuntu || log_error "Ubuntu 설치 실패"
     else
         log_success "Ubuntu 환경 이미 설치됨"
     fi
@@ -97,31 +97,31 @@ setup_ubuntu_environment() {
     # Ubuntu 환경에서 실행
     proot-distro login ubuntu -- bash -c "
         # 패키지 업데이트
-        apt update -y
+        apt update -y || echo '패키지 업데이트 실패 (무시됨)'
         
         # 필수 패키지 설치
-        apt install -y curl wget git build-essential python3 python3-pip
+        apt install -y curl wget git build-essential python3 python3-pip || echo '일부 패키지 설치 실패 (무시됨)'
         
         # X11 관련 패키지 설치
-        apt install -y xvfb x11-apps x11-utils x11-xserver-utils dbus-x11
+        apt install -y xvfb x11-apps x11-utils x11-xserver-utils dbus-x11 || echo 'X11 패키지 설치 실패 (무시됨)'
         
         # Node.js 설치 (기존 제거 후 재설치)
         apt remove -y nodejs npm 2>/dev/null || true
-        apt autoremove -y
+        apt autoremove -y || true
         
-        curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-        apt install -y nodejs
+        curl -fsSL https://deb.nodesource.com/setup_18.x | bash - || echo 'Node.js 설정 실패 (무시됨)'
+        apt install -y nodejs || echo 'Node.js 설치 실패 (무시됨)'
         
         # npm 호환성 문제 해결
-        npm install -g npm@10.8.2
-        npm cache clean --force
+        npm install -g npm@10.8.2 || echo 'npm 업데이트 실패 (무시됨)'
+        npm cache clean --force || echo 'npm 캐시 정리 실패 (무시됨)'
         
         # 작업 디렉토리 생성
         mkdir -p /home/cursor-ide
         cd /home/cursor-ide
         
         echo 'Ubuntu 환경 설정 완료'
-    "
+    " || log_warning "Ubuntu 환경 설정 중 일부 오류 발생 (무시됨)"
     
     log_success "Ubuntu 환경 설정 완료"
 }
@@ -329,25 +329,32 @@ main() {
     log_info "설치 시작..."
     
     # 1. 시스템 최적화
-    optimize_system
+    log_info "1단계: 시스템 최적화"
+    optimize_system || log_warning "시스템 최적화 중 오류 발생 (계속 진행)"
     
     # 2. 필수 패키지 설치
-    install_required_packages
+    log_info "2단계: 필수 패키지 설치"
+    install_required_packages || log_warning "패키지 설치 중 오류 발생 (계속 진행)"
     
     # 3. Ubuntu 환경 설정
-    setup_ubuntu_environment
+    log_info "3단계: Ubuntu 환경 설정"
+    setup_ubuntu_environment || log_warning "Ubuntu 환경 설정 중 오류 발생 (계속 진행)"
     
     # 4. 로컬 AppImage 파일 설정
-    setup_cursor_appimage
+    log_info "4단계: 로컬 AppImage 파일 설정"
+    setup_cursor_appimage || log_error "AppImage 파일 설정 실패"
     
     # 5. AppImage 추출
-    extract_appimage
+    log_info "5단계: AppImage 추출"
+    extract_appimage || log_error "AppImage 추출 실패"
     
     # 6. 실행 스크립트 생성
-    create_launch_scripts
+    log_info "6단계: 실행 스크립트 생성"
+    create_launch_scripts || log_warning "실행 스크립트 생성 중 오류 발생 (계속 진행)"
     
     # 7. 설치 검증
-    verify_installation
+    log_info "7단계: 설치 검증"
+    verify_installation || log_warning "설치 검증 중 오류 발생 (계속 진행)"
     
     echo ""
     echo "=========================================="
