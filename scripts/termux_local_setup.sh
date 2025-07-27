@@ -217,7 +217,14 @@ if [ -f "./squashfs-root/AppRun" ]; then
     )
     
     # Execute silently
-    ./squashfs-root/AppRun "${CURSOR_FLAGS[@]}" "$@" > /dev/null 2>&1
+    ./squashfs-root/AppRun "${CURSOR_FLAGS[@]}" "$@" > /dev/null 2>&1 &
+    CURSOR_PID=$!
+    
+    # Wait for Cursor to fully start
+    sleep 5
+    
+    # Wait for Cursor process to finish
+    wait $CURSOR_PID 2>/dev/null || true
 fi
 
 # 5. Cleanup Xvfb
