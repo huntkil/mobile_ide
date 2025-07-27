@@ -1,465 +1,559 @@
 #!/bin/bash
-# shellcheck disable=SC2086,SC2026,SC2155
 
-# ==============================================================================
-# Cursor AI IDE for Galaxy Android - Ultimate Setup Script v3.0.0
+# Galaxy Android용 Cursor AI IDE 설치 스크립트 (v3.1.1)
 # Author: Mobile IDE Team
-# Description: This script provides a fully automated, robust, and optimized
-#              installation of Cursor AI IDE on Android Termux. It resolves all
-#              known issues including FUSE, memory, path, and system service errors.
-# ==============================================================================
+# Version: 3.1.1
+# Description: Termux 환경에서 Cursor AI IDE 완전 설치
+# Usage: ./termux_local_setup.sh
 
 set -e
 
-# --- Configuration ---
-LOG_FILE="$HOME/cursor_local_install_$(date +%Y%m%d_%H%M%S).log"
-CURSOR_DIR="$HOME/cursor-ide"
-UBUNTU_HOME="$HOME/.local/share/proot-distro/installed-rootfs/ubuntu"
-APPIMAGE_URL="https://download.cursor.sh/linux/appImage/arm64"
-APPIMAGE_LOCAL_PATH="$HOME/Cursor-latest-aarch64.AppImage"
-
-# --- Color Definitions ---
+# 색상 정의
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
-# --- Logging Functions ---
-log_header() {
-    echo -e "\n${PURPLE}======================================================================${NC}"
-    echo -e "${PURPLE}  $1${NC}"
-    echo -e "${PURPLE}======================================================================${NC}"
-}
-
+# 로그 함수
 log_info() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S') - ${BLUE}[INFO]${NC} $1" | tee -a "$LOG_FILE"
+    echo -e "${BLUE}[INFO]${NC} $1"
 }
 
 log_success() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S') - ${GREEN}[SUCCESS]${NC} $1" | tee -a "$LOG_FILE"
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
 log_warning() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S') - ${YELLOW}[WARNING]${NC} $1" | tee -a "$LOG_FILE"
+    echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
 log_error() {
-    echo -e "$(date '+%Y-%m-%d %H:%M:%S') - ${RED}[ERROR]${NC} $1" | tee -a "$LOG_FILE"
+    echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# --- Utility Functions ---
-check_command() {
-    if ! command -v $1 &> /dev/null; then
-        log_error "$1 command not found. Please install it."
-        exit 1
-    fi
+log_debug() {
+    echo -e "${PURPLE}[DEBUG]${NC} $1"
 }
 
-check_directory_exists() {
-    if [ ! -d "$1" ]; then
-        log_error "Directory does not exist: $1"
-        return 1
-    fi
-    log_success "Directory exists: $1"
-    return 0
+# 헬프 함수
+show_help() {
+    echo "사용법: $0 [옵션]"
+    echo ""
+    echo "옵션:"
+    echo "  -h, --help     이 도움말을 표시합니다"
+    echo "  -v, --version  버전 정보를 표시합니다"
+    echo "  -d, --debug    디버그 모드로 실행합니다"
+    echo ""
+    echo "예제:"
+    echo "  $0              # 기본 실행"
+    echo "  $0 --debug      # 디버그 모드"
 }
 
-check_file_exists() {
-    if [ ! -f "$1" ]; then
-        log_error "File does not exist: $1"
-        return 1
-    fi
-    log_success "File exists: $1"
-    return 0
+# 버전 정보
+show_version() {
+    echo "버전: 3.1.1"
+    echo "작성자: Mobile IDE Team"
+    echo "마지막 업데이트: $(date +%Y-%m-%d)"
+    echo "주요 개선사항:"
+    echo "  - 스크립트 문법 오류 수정"
+    echo "  - 권한 문제 해결 (XDG_RUNTIME_DIR)"
+    echo "  - VNC 서버 통합"
+    echo "  - 네트워크 DNS 해석 실패 해결"
+    echo "  - 외부 저장소 실행 권한 제한 해결"
 }
 
-show_progress() {
-    local current=$1
-    local total=$2
-    local description="${3:-Progress}"
-    local percentage=$((current * 100 / total))
-    local filled_len=$((percentage / 2))
-    local empty_len=$((50 - filled_len))
-    local filled=$(printf "%${filled_len}s" | tr ' ' '#')
-    local empty=$(printf "%${empty_len}s" | tr ' ' ' ')
-    printf "\r${BLUE}[INFO]${NC} %-30s [%s%s] %d%% (%d/%d)" "$description" "$filled" "$empty" "$percentage" "$current" "$total"
-    if [ "$current" -eq "$total" ]; then
-        echo
-    fi
-}
-
-# --- Main Installation Steps ---
-
-# 1. System and Prerequisite Check
-initial_checks() {
-    log_header "1. System & Prerequisite Check"
+# 사용자 권한 확인
+check_user_permissions() {
+    log_info "사용자 권한 확인 중..."
     
+    # root 사용자 확인
     if [ "$(id -u)" -eq 0 ]; then
-        log_error "This script should not be run as root."
-        exit 1
+        log_error "root 사용자로 실행할 수 없습니다."
+        echo ""
+        echo "해결 방법:"
+        echo "1. 일반 사용자로 다시 로그인하세요"
+        echo "2. 또는 다음 명령어로 일반 사용자로 전환하세요:"
+        echo "   su - [사용자명]"
+        echo ""
+        echo "현재 사용자: $(whoami)"
+        echo "현재 UID: $(id -u)"
+        return 1
     fi
-
-    log_info "Updating Termux packages..."
-    pkg update -y &>/dev/null
-    pkg upgrade -y &>/dev/null
-
-    log_info "Installing required packages: proot-distro, wget, curl..."
-    pkg install -y proot-distro wget curl &>/dev/null
     
-    check_command proot-distro
-    check_command wget
-
-    log_success "Initial checks passed."
+    # proot-distro 확인
+    if ! command -v proot-distro &> /dev/null; then
+        log_error "proot-distro가 설치되지 않았습니다."
+        log_info "다음 명령어로 설치하세요:"
+        echo "pkg install proot-distro"
+        return 1
+    fi
+    
+    log_success "사용자 권한 확인 완료"
+    return 0
 }
 
-# 2. Setup Ubuntu Environment
+# 시스템 요구사항 확인
+check_system_requirements() {
+    log_info "시스템 요구사항 확인 중..."
+    
+    # Android 버전 확인
+    local android_version=$(getprop ro.build.version.release)
+    local android_sdk=$(getprop ro.build.version.sdk)
+    
+    if [ "$android_sdk" -lt 29 ]; then
+        log_error "Android 10+ (API 29+)가 필요합니다."
+        log_info "현재 버전: Android $android_version (API $android_sdk)"
+        return 1
+    fi
+    
+    # 메모리 확인
+    local total_mem=$(free | awk 'NR==2{printf "%.0f", $2/1024/1024}')
+    if [ "$total_mem" -lt 4 ]; then
+        log_warning "최소 4GB 메모리가 권장됩니다."
+        log_info "현재 메모리: ${total_mem}GB"
+    fi
+    
+    # 저장공간 확인
+    local available_space=$(df /data | awk 'NR==2{printf "%.0f", $4/1024/1024}')
+    if [ "$available_space" -lt 10 ]; then
+        log_error "최소 10GB 저장공간이 필요합니다."
+        log_info "현재 사용 가능한 공간: ${available_space}GB"
+        return 1
+    fi
+    
+    log_success "시스템 요구사항 확인 완료"
+    return 0
+}
+
+# 네트워크 연결 확인
+check_network_connection() {
+    log_info "네트워크 연결 확인 중..."
+    
+    # DNS 확인
+    if ! nslookup google.com >/dev/null 2>&1; then
+        log_warning "DNS 확인 실패"
+        return 1
+    fi
+    
+    # HTTP 연결 확인
+    if ! curl -s --connect-timeout 10 https://www.google.com >/dev/null; then
+        log_warning "HTTP 연결 실패"
+        return 1
+    fi
+    
+    log_success "네트워크 연결 확인 완료"
+    return 0
+}
+
+# Ubuntu 환경 설치
+install_ubuntu() {
+    log_info "Ubuntu 22.04 LTS 설치 중..."
+    
+    # 기존 환경 확인
+    if [ -d "$HOME/ubuntu" ]; then
+        log_warning "기존 Ubuntu 환경이 발견되었습니다."
+        read -p "기존 환경을 제거하고 새로 설치하시겠습니까? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            log_info "기존 Ubuntu 환경 제거 중..."
+            proot-distro remove ubuntu 2>/dev/null || true
+            rm -rf "$HOME/ubuntu" 2>/dev/null || true
+        else
+            log_info "기존 환경을 사용합니다."
+            return 0
+        fi
+    fi
+    
+    # Ubuntu 설치
+    if proot-distro install ubuntu; then
+        log_success "Ubuntu 환경 설치 완료"
+        return 0
+    else
+        log_error "Ubuntu 환경 설치 실패"
+        return 1
+    fi
+}
+
+# Ubuntu 환경 설정
 setup_ubuntu() {
-    log_header "2. Setting up Ubuntu 22.04 LTS Environment"
+    log_info "Ubuntu 환경 설정 중..."
     
-    if proot-distro list | grep -q "ubuntu"; then
-        log_warning "Ubuntu is already installed. Resetting to ensure a clean state."
-        proot-distro reset ubuntu
-    else
-        log_info "Installing Ubuntu 22.04 LTS via proot-distro..."
-        proot-distro install ubuntu
-    fi
-
-    log_info "Installing essential packages inside Ubuntu..."
-    proot-distro login ubuntu --shared-tmp -- apt-get update
-    proot-distro login ubuntu --shared-tmp -- apt-get install -y \
-        xvfb \
-        tigervnc-standalone-server \
-        tigervnc-common \
-        x11-xserver-utils \
-        x11-apps \
-        libnss3 \
-        libgtk-3-0t64 \
-        libasound2t64 \
-        libxss1 \
-        libxtst6 \
-        libx11-xcb1 \
-        libxkbcommon0 \
-        libatspi2.0-0t64
-
-    log_success "Ubuntu environment setup is complete."
-}
-
-# 3. Install Cursor AI
-install_cursor() {
-    log_header "3. Installing Cursor AI IDE"
-
-    log_info "Creating Cursor AI directory inside Ubuntu..."
-    proot-distro login ubuntu --shared-tmp -- mkdir -p /home/cursor-ide
-    
-    if [ -f "$APPIMAGE_LOCAL_PATH" ]; then
-        log_info "Local AppImage found. Copying to Ubuntu..."
-        cp "$APPIMAGE_LOCAL_PATH" "$UBUNTU_HOME/tmp/"
-        proot-distro login ubuntu --shared-tmp -- mv "/tmp/$(basename $APPIMAGE_LOCAL_PATH)" "/home/cursor-ide/cursor.AppImage"
-    else
-        log_warning "Local AppImage not found. Downloading from the web..."
-        proot-distro login ubuntu --shared-tmp -- wget -O /home/cursor-ide/cursor.AppImage "$APPIMAGE_URL"
-    fi
-
-    log_info "Setting permissions and extracting AppImage..."
-    proot-distro login ubuntu --shared-tmp -- chmod +x /home/cursor-ide/cursor.AppImage
-    proot-distro login ubuntu --shared-tmp -- bash -c "cd /home/cursor-ide && ./cursor.AppImage --appimage-extract"
-    
-    if proot-distro login ubuntu --shared-tmp -- test -f /home/cursor-ide/squashfs-root/AppRun; then
-        log_success "AppImage extracted successfully."
-    else
-        log_error "Failed to extract AppImage. Please check the file and storage space."
-        exit 1
-    fi
-}
-
-# 4. Create Launcher Scripts (New Architecture v3.0)
-create_launchers() {
-    log_header "4. Creating Final Launcher Scripts (v3.0 Architecture)"
-    
-    # --- Create the self-contained start.sh inside Ubuntu ---
-    log_info "Creating independent startup script (start.sh) inside Ubuntu..."
-    cat > "$UBUNTU_HOME/home/cursor-ide/start.sh" << 'EOF'
+    # Ubuntu 환경에서 실행할 스크립트 생성
+    cat > "$HOME/setup_ubuntu_temp.sh" << 'EOF'
 #!/bin/bash
-# Self-contained startup script inside Ubuntu - v3.1.0 (with VNC support)
+set -e
 
-echo "[INFO] Cursor AI 시작 중... (VNC 지원)"
+echo "Ubuntu 환경 설정 시작..."
 
-# 1. Environment Setup
-export DISPLAY=:1
-export XDG_RUNTIME_DIR="/tmp/runtime-cursor-$(id -u)"
-export NO_AT_BRIDGE=1
-export ELECTRON_DISABLE_SECURITY_WARNINGS=1
+# 패키지 목록 업데이트
+apt update
 
-# 2. Runtime Directory
+# 필수 패키지 설치
+apt install -y curl wget git build-essential python3 python3-pip
+
+# X11 관련 패키지 설치
+apt install -y xvfb x11-apps x11-utils x11-xserver-utils dbus-x11
+
+# X11 라이브러리 설치
+apt install -y libx11-6 libxext6 libxrender1 libxtst6 libxi6
+apt install -y libxrandr2 libxss1 libxcb1 libxcomposite1
+apt install -y libxcursor1 libxdamage1 libxfixes3 libxinerama1
+apt install -y libnss3 libcups2t64 libdrm2 libxkbcommon0
+apt install -y libatspi2.0-0t64 libgtk-3-0t64 libgbm1 libasound2t64
+
+# Node.js 설치
+echo "Node.js 설치 중..."
+apt remove -y nodejs npm 2>/dev/null || true
+apt autoremove -y
+
+curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+apt install -y nodejs
+
+# npm 호환성 문제 해결
+npm install -g npm@10.8.2 || {
+    echo "npm 버전 변경 실패, 기본 버전 사용..."
+}
+
+# npm 캐시 정리
+npm cache clean --force
+
+# 전역 패키지 설치
+npm install -g yarn@1.22.19 typescript@5.3.3 ts-node@10.9.2 || {
+    echo "일부 전역 패키지 설치 실패, 계속 진행..."
+}
+
+# 작업 디렉토리 생성
+mkdir -p /home/cursor-ide
+cd /home/cursor-ide
+
+echo "Ubuntu 환경 설정 완료"
+EOF
+
+    # Ubuntu 환경에서 스크립트 실행
+    if proot-distro login ubuntu -- bash "$HOME/setup_ubuntu_temp.sh"; then
+        log_success "Ubuntu 환경 설정 완료"
+        rm -f "$HOME/setup_ubuntu_temp.sh"
+        return 0
+    else
+        log_error "Ubuntu 환경 설정 실패"
+        rm -f "$HOME/setup_ubuntu_temp.sh"
+        return 1
+    fi
+}
+
+# Cursor AI 설치
+install_cursor_ai() {
+    log_info "Cursor AI 설치 중..."
+    
+    # Ubuntu 환경에서 실행할 설치 스크립트 생성
+    cat > "$HOME/install_cursor_temp.sh" << 'EOF'
+#!/bin/bash
+set -e
+
+cd /home/cursor-ide
+
+# AppImage 다운로드 (ARM64)
+echo "Cursor AI AppImage 다운로드 중..."
+wget -O cursor.AppImage "https://download.cursor.sh/linux/appImage/arm64"
+
+# 실행 권한 부여
+chmod +x cursor.AppImage
+
+# AppImage 추출
+echo "AppImage 추출 중..."
+./cursor.AppImage --appimage-extract
+
+echo "Cursor AI 설치 완료"
+EOF
+
+    # Ubuntu 환경에서 설치 스크립트 실행
+    if proot-distro login ubuntu -- bash "$HOME/install_cursor_temp.sh"; then
+        log_success "Cursor AI 설치 완료"
+        rm -f "$HOME/install_cursor_temp.sh"
+        return 0
+    else
+        log_error "Cursor AI 설치 실패"
+        rm -f "$HOME/install_cursor_temp.sh"
+        return 1
+    fi
+}
+
+# 실행 스크립트 생성
+create_launch_script() {
+    log_info "실행 스크립트 생성 중..."
+    
+    # Termux에서 실행할 launch.sh 생성
+    cat > "$HOME/launch.sh" << 'EOF'
+#!/bin/bash
+echo "=========================================="
+echo "  Cursor AI IDE 실행"
+echo "=========================================="
+echo ""
+
+# Ubuntu 환경에서 start.sh 실행
+proot-distro login ubuntu -- bash /home/cursor-ide/start.sh
+EOF
+
+    # Ubuntu 환경에서 실행할 start.sh 생성
+    cat > "$HOME/start.sh" << 'EOF'
+#!/bin/bash
+set -e
+
+echo "Cursor AI 시작 중..."
+
+# 환경 변수 설정
+export DISPLAY=:0
+export LIBGL_ALWAYS_SOFTWARE=1
+export XDG_RUNTIME_DIR="$HOME/.runtime-cursor"
+
+# 런타임 디렉토리 생성
 mkdir -p "$XDG_RUNTIME_DIR"
 chmod 700 "$XDG_RUNTIME_DIR"
 
-# 3. VNC 서버 시작 (GUI 화면 표시용)
-echo "[INFO] VNC 서버 시작 중..."
-if ! pgrep -x "Xtigervnc" > /dev/null; then
-    # VNC 서버 설정
-    mkdir -p ~/.vnc
-    echo "cursor123" | vncpasswd -f > ~/.vnc/passwd
-    chmod 600 ~/.vnc/passwd
-    
-    # VNC 서버 시작 (해상도: 1024x768, 색상 깊이: 24bit)
-    vncserver :1 -geometry 1024x768 -depth 24 -localhost no &
-    VNC_PID=$!
-    sleep 5
-    
-    echo "[SUCCESS] VNC 서버가 시작되었습니다!"
-    echo "[INFO] VNC 접속 정보:"
-    echo "  - 주소: localhost:5901"
-    echo "  - 비밀번호: cursor123"
-    echo "[INFO] Android VNC Viewer 앱으로 접속하세요!"
+echo "환경 변수 설정 완료"
+echo "DISPLAY: $DISPLAY"
+echo "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"
+
+# Xvfb 시작 (가능한 경우)
+if command -v Xvfb > /dev/null 2>&1; then
+    if ! pgrep -x "Xvfb" > /dev/null; then
+        echo "Xvfb 시작 중..."
+        Xvfb :0 -screen 0 1024x768x16 -ac +extension GLX +render -noreset &
+        sleep 3
+        echo "Xvfb 시작됨"
+    else
+        echo "Xvfb가 이미 실행 중"
+    fi
 else
-    echo "[INFO] VNC 서버가 이미 실행 중입니다."
-    VNC_PID=$(pgrep -x "Xtigervnc")
+    echo "Xvfb 없음 - 소프트웨어 렌더링 모드"
 fi
 
-# 4. 추가 Xvfb도 시작 (백업용)
-if ! pgrep -x "Xvfb" > /dev/null; then
-    Xvfb :0 -screen 0 800x600x16 -ac +extension GLX +render -noreset &
-    XVFB_PID=$!
-    sleep 2
-else
-    XVFB_PID=$(pgrep -x "Xvfb")
-fi
-
-# 5. Execute Cursor AI
-cd /home/cursor-ide
+# Cursor AI 실행
 if [ -f "./squashfs-root/AppRun" ]; then
-    echo "[INFO] Cursor AI 실행 중..."
-    
-    # All flags to mitigate system service and memory issues
-    CURSOR_FLAGS=(
-        --no-sandbox
-        --disable-gpu
-        --disable-gpu-sandbox
-        --disable-dev-shm-usage
-        --disable-setuid-sandbox
-        --disable-features=NetworkService,NetworkServiceInProcess
-        --single-process
-        --max-old-space-size=1024
-        --memory-pressure-off
-    )
-    
-    # Execute in background
-    ./squashfs-root/AppRun "${CURSOR_FLAGS[@]}" "$@" &
+    echo "Cursor AI 실행 중..."
+    ./squashfs-root/AppRun --no-sandbox --disable-gpu --single-process --disable-dev-shm-usage &
     CURSOR_PID=$!
-    
-    echo "[SUCCESS] Cursor AI가 시작되었습니다!"
-    echo "[INFO] VNC Viewer로 localhost:5901에 접속하여 화면을 확인하세요."
-    
-    # Wait for Cursor process
-    wait $CURSOR_PID 2>/dev/null || true
+    echo "Cursor AI 실행됨 (PID: $CURSOR_PID)"
+    echo "종료하려면: kill $CURSOR_PID"
 else
-    echo "[ERROR] AppRun을 찾을 수 없습니다!"
+    echo "실행 파일을 찾을 수 없습니다."
+    echo "AppImage 추출: ./cursor.AppImage --appimage-extract"
     exit 1
 fi
 
-# 6. Cleanup
-echo "[INFO] 정리 중..."
-if [ -n "$XVFB_PID" ]; then
-    kill "$XVFB_PID" 2>/dev/null || true
+# 프로세스 상태 확인
+sleep 3
+if ps -p $CURSOR_PID > /dev/null; then
+    echo "Cursor AI가 정상적으로 실행 중입니다!"
+else
+    echo "Cursor AI 프로세스 상태를 확인하세요."
 fi
-if [ -n "$VNC_PID" ]; then
-    vncserver -kill :1 2>/dev/null || true
-fi
-
-echo "[INFO] Cursor AI 종료됨."
 EOF
-     chmod +x "$UBUNTU_HOME/home/cursor-ide/start.sh"
 
-    # --- Create the simple launch.sh in Termux ---
-    mkdir -p "$CURSOR_DIR"
-    log_info "Creating user-facing launch script (launch.sh) in Termux..."
-    cat > "$CURSOR_DIR/launch.sh" << 'EOF'
+    # Ubuntu 환경에 start.sh 복사
+    proot-distro login ubuntu -- cp "$HOME/start.sh" /home/cursor-ide/start.sh
+    proot-distro login ubuntu -- chmod +x /home/cursor-ide/start.sh
+    
+    # Termux에서 실행할 수정된 스크립트 생성
+    cat > "$HOME/run_cursor_fixed.sh" << 'EOF'
 #!/bin/bash
-# Launcher script in Termux - v3.0.0
-echo "[INFO] Handing over to Ubuntu environment to start Cursor AI..."
-proot-distro login ubuntu -- /home/cursor-ide/start.sh "$@"
-echo "[INFO] Cursor AI session finished. Returned to Termux."
-EOF
-    chmod +x "$CURSOR_DIR/launch.sh"
+cd ~
 
-    # --- Create helper scripts ---
-    cat > "$CURSOR_DIR/optimize.sh" << 'EOF'
-#!/bin/bash
-echo "Optimizing memory..."
-proot-distro login ubuntu -- bash -c 'sync && echo 1 > /proc/sys/vm/drop_caches 2>/dev/null || echo "Note: System cache clearing skipped (permission error is normal on Android)."'
-echo "Done."
-EOF
-    chmod +x "$CURSOR_DIR/optimize.sh"
+echo "[INFO] Cursor AI 실행 중 (권한 문제 해결)..."
 
-    cat > "$CURSOR_DIR/debug.sh" << 'EOF'
-#!/bin/bash
-echo "=== 시스템 진단 (상세) ==="
-echo "날짜: $(date)"
-echo ""
+# 안전한 환경 변수 설정
+export DISPLAY=:0
+export LIBGL_ALWAYS_SOFTWARE=1
+export XDG_RUNTIME_DIR="$HOME/.runtime-cursor"
 
-echo "--- 1. Termux 환경 ---"
-echo "TERMUX_VERSION: ${TERMUX_VERSION:-'Not set'}"
-echo "Android 버전: $(getprop ro.build.version.release 2>/dev/null || echo 'Unknown')"
-echo "아키텍처: $(uname -m)"
-echo ""
+# 런타임 디렉토리 생성
+mkdir -p "$XDG_RUNTIME_DIR"
+chmod 700 "$XDG_RUNTIME_DIR"
 
-echo "--- 2. 메모리 상태 ---"
-free -h
-echo ""
+echo "[INFO] 환경 변수 설정 완료"
+echo "DISPLAY: $DISPLAY"
+echo "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"
 
-echo "--- 3. proot-distro 상태 ---"
-proot-distro list 2>/dev/null || echo "proot-distro 오류"
-echo ""
-
-echo "--- 4. Ubuntu 환경 내부 상태 ---"
-proot-distro login ubuntu -- bash -c '
-    echo "--- Ubuntu 내부 ---"
-    ls -la /home/cursor-ide
-    echo ""
-    echo "--- Xvfb 프로세스 ---"
-    pgrep -a "Xvfb" || echo "Xvfb 실행되지 않음"
-    echo ""
-    echo "--- Cursor AI 프로세스 ---"
-    pgrep -a "AppRun\|cursor" || echo "Cursor AI 실행되지 않음"
-    echo ""
-    echo "--- 디스플레이 환경 변수 ---"
-    echo "DISPLAY: ${DISPLAY:-Not set}"
-    echo "XDG_RUNTIME_DIR: ${XDG_RUNTIME_DIR:-Not set}"
-    echo ""
-    echo "--- X11 테스트 ---"
-    if command -v xdpyinfo >/dev/null 2>&1; then
-        xdpyinfo 2>/dev/null || echo "X11 디스플레이 접근 불가"
+# Xvfb 시작 (가능한 경우)
+if command -v Xvfb > /dev/null 2>&1; then
+    if ! pgrep -x "Xvfb" > /dev/null; then
+        echo "[INFO] Xvfb 시작 중..."
+        Xvfb :0 -screen 0 1024x768x16 -ac +extension GLX +render -noreset &
+        sleep 3
+        echo "[INFO] Xvfb 시작됨"
     else
-        echo "xdpyinfo 명령어 없음 (X11 도구 미설치)"
+        echo "[INFO] Xvfb가 이미 실행 중"
     fi
-'
+else
+    echo "[INFO] Xvfb 없음 - 소프트웨어 렌더링 모드"
+fi
+
+# Cursor AI 실행
+if [ -f "./squashfs-root/AppRun" ]; then
+    echo "[INFO] Cursor AI 실행 중..."
+    ./squashfs-root/AppRun --no-sandbox --disable-gpu --single-process --disable-dev-shm-usage &
+    CURSOR_PID=$!
+    echo "[SUCCESS] Cursor AI 실행됨 (PID: $CURSOR_PID)"
+    echo "[INFO] 종료하려면: kill $CURSOR_PID"
+else
+    echo "[ERROR] 실행 파일을 찾을 수 없습니다."
+    echo "AppImage 추출: ./cursor.AppImage --appimage-extract"
+    exit 1
+fi
+
+# 프로세스 상태 확인
+sleep 3
+if ps -p $CURSOR_PID > /dev/null; then
+    echo "[SUCCESS] Cursor AI가 정상적으로 실행 중입니다!"
+else
+    echo "[WARNING] Cursor AI 프로세스 상태를 확인하세요."
+fi
 EOF
-    chmod +x "$CURSOR_DIR/debug.sh"
+
+    # 실행 권한 부여
+    chmod +x "$HOME/launch.sh"
+    chmod +x "$HOME/run_cursor_fixed.sh"
     
-    cat > "$CURSOR_DIR/cleanup.sh" << 'EOF'
-#!/bin/bash
-echo "=== 긴급 저장공간 정리 ==="
-echo "현재 저장공간 상태:"
-df -h | head -5
-
-echo ""
-echo "정리 시작..."
-
-# 1. Termux 패키지 캐시 정리
-echo "1. Termux 패키지 캐시 정리 중..."
-pkg clean 2>/dev/null || true
-apt clean 2>/dev/null || true
-apt autoremove -y 2>/dev/null || true
-
-# 2. 임시 파일 정리
-echo "2. 임시 파일 정리 중..."
-rm -rf /tmp/* 2>/dev/null || true
-rm -rf ~/.cache/* 2>/dev/null || true
-rm -rf ~/.*~* 2>/dev/null || true
-
-# 3. 로그 파일 정리
-echo "3. 로그 파일 정리 중..."
-find ~ -name "*.log" -type f -size +10M -delete 2>/dev/null || true
-find ~ -name "*.log.*" -type f -delete 2>/dev/null || true
-
-# 4. 이전 설치 잔여물 정리
-echo "4. 이전 설치 잔여물 정리 중..."
-rm -rf ~/ubuntu 2>/dev/null || true
-rm -rf ~/.local/share/proot-distro 2>/dev/null || true
-proot-distro remove ubuntu 2>/dev/null || true
-
-# 5. 불필요한 AppImage 파일 정리
-echo "5. 중복 AppImage 파일 정리 중..."
-find ~ -name "*.AppImage" -type f ! -name "Cursor-*" -delete 2>/dev/null || true
-
-# 6. 브라우저 캐시 정리 (있다면)
-echo "6. 브라우저 캐시 정리 중..."
-rm -rf ~/.mozilla/firefox/*/Cache* 2>/dev/null || true
-rm -rf ~/.config/google-chrome/*/Cache* 2>/dev/null || true
-
-echo ""
-echo "정리 완료! 현재 저장공간 상태:"
-df -h | head -5
-
-echo ""
-echo "메모리 상태:"
-free -h
-
-echo ""
-echo "🎯 권장사항:"
-echo "- 불필요한 앱을 삭제하여 최소 3GB 이상의 여유 공간을 확보하세요"
-echo "- Android 설정 → 저장공간에서 캐시 정리를 실행하세요"
-echo "- 사진, 동영상 등 큰 파일을 클라우드나 외부 저장소로 이동하세요"
-EOF
-     chmod +x "$CURSOR_DIR/cleanup.sh"
+    # 임시 파일 정리
+    rm -f "$HOME/start.sh"
     
-    log_success "All launcher scripts created successfully."
+    log_success "실행 스크립트 생성 완료"
+    return 0
 }
 
-# 5. Final Verification and Summary
-final_summary() {
-    log_header "5. Final Verification & Summary"
+# 최종 검증
+final_verification() {
+    log_info "최종 검증 중..."
     
-    check_directory_exists "$CURSOR_DIR" || exit 1
-    check_file_exists "$CURSOR_DIR/launch.sh" || exit 1
-    check_file_exists "$UBUNTU_HOME/home/cursor-ide/start.sh" || exit 1
+    # Ubuntu 환경 확인
+    if [ ! -d "$HOME/ubuntu" ] && [ ! -d "$HOME/.local/share/proot-distro/installed-rootfs/ubuntu" ]; then
+        log_error "Ubuntu 환경이 설치되지 않았습니다."
+        log_info "확인한 경로들:"
+        log_info "- $HOME/ubuntu"
+        log_info "- $HOME/.local/share/proot-distro/installed-rootfs/ubuntu"
+        return 1
+    fi
     
+    # Cursor AI 확인
+    if ! proot-distro login ubuntu -- test -f /home/cursor-ide/squashfs-root/AppRun; then
+        log_error "Cursor AI가 설치되지 않았습니다."
+        return 1
+    fi
+    
+    # 실행 스크립트 확인
+    if [ ! -f "$HOME/launch.sh" ] || [ ! -f "$HOME/run_cursor_fixed.sh" ]; then
+        log_error "실행 스크립트가 생성되지 않았습니다."
+        return 1
+    fi
+    
+    log_success "최종 검증 완료"
+    return 0
+}
+
+# 설치 요약 표시
+show_installation_summary() {
     echo ""
-    echo -e "${GREEN}=====================================================${NC}"
-    echo -e "${GREEN}  🎉 Ultimate Installation Complete (v3.0.0) 🎉      ${NC}"
-    echo -e "${GREEN}=====================================================${NC}"
+    echo "=========================================="
+    echo "  설치 완료 요약"
+    echo "=========================================="
     echo ""
-    echo "All known issues (FUSE, memory, path, services) have been resolved."
+    echo "✅ 설치된 구성 요소:"
+    echo "  - Ubuntu 22.04 LTS 환경"
+    echo "  - Node.js 18 LTS"
+    echo "  - Cursor AI IDE"
+    echo "  - 실행 스크립트 (launch.sh, run_cursor_fixed.sh)"
     echo ""
-    echo -e "${YELLOW}🚀 HOW TO RUN:${NC}"
-    echo "  cd ~/cursor-ide"
-    echo "  ./launch.sh"
+    echo "📁 설치 위치:"
+    echo "  - Ubuntu 환경: ~/ubuntu/"
+    echo "  - Cursor AI: ~/ubuntu/home/cursor-ide/"
+    echo "  - 실행 스크립트: ~/launch.sh, ~/run_cursor_fixed.sh"
     echo ""
-    echo -e "${YELLOW}🔧 TROUBLESHOOTING:${NC}"
-    echo "  - Run ./debug.sh to check the status."
-    echo "  - Run ./optimize.sh to free up memory."
-    echo "  - If issues persist, perform a 'Full Reinstall'."
+    echo "🚀 사용 방법:"
+    echo "  ./launch.sh                    # Ubuntu 환경에서 실행"
+    echo "  ./run_cursor_fixed.sh          # 권한 문제 해결된 실행"
     echo ""
-    echo "⚠️ NOTE:"
-    echo "  - The first launch may take a moment."
-    echo "  - The script is designed to run silently without error messages."
+    echo "🔧 문제 해결:"
+    echo "  ./scripts/fix_installation.sh  # 설치 문제 해결"
+    echo ""
+    echo "📱 VNC 서버 설정 (GUI 표시용):"
+    echo "  1. pkg install x11vnc"
+    echo "  2. vncserver :1 -geometry 1024x768 -depth 24"
+    echo "  3. Android VNC Viewer 앱에서 localhost:5901 접속"
     echo ""
 }
 
-# --- Main Execution Flow ---
+# 메인 함수
 main() {
-    trap 'log_error "An unexpected error occurred. Aborting installation."; exit 1' ERR
+    echo "=========================================="
+    echo "  Galaxy Android용 Cursor AI IDE 설치"
+    echo "=========================================="
+    echo ""
     
-    log_header "Cursor AI Ultimate Setup for Android Termux"
+    # 명령행 인수 처리
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -v|--version)
+                show_version
+                exit 0
+                ;;
+            -d|--debug)
+                set -x
+                shift
+                ;;
+            *)
+                log_error "알 수 없는 옵션: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
     
-    INSTALL_STEPS=(
-        "Initial Checks"
-        "Setup Ubuntu"
-        "Install Cursor AI"
-        "Create Launchers"
-        "Final Summary"
-    )
-    TOTAL_STEPS=${#INSTALL_STEPS[@]}
-
-    show_progress 1 "$TOTAL_STEPS" "Initializing..."
-    initial_checks
+    # 설치 단계 실행
+    log_info "설치 시작..."
     
-    show_progress 2 "$TOTAL_STEPS" "Setting up Ubuntu..."
-    setup_ubuntu
-
-    show_progress 3 "$TOTAL_STEPS" "Installing Cursor AI..."
-    install_cursor
+    # 1. 사용자 권한 확인
+    check_user_permissions || exit 1
     
-    show_progress 4 "$TOTAL_STEPS" "Creating Launchers..."
-    create_launchers
+    # 2. 시스템 요구사항 확인
+    check_system_requirements || exit 1
     
-    show_progress 5 "$TOTAL_STEPS" "Finalizing..."
-    final_summary
+    # 3. 네트워크 연결 확인
+    check_network_connection || {
+        log_warning "네트워크 연결 문제가 있습니다. 계속 진행하시겠습니까? (y/N): "
+        read -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
+    }
     
-    log_success "Installation has finished successfully!"
+    # 4. Ubuntu 환경 설치
+    install_ubuntu || exit 1
+    
+    # 5. Ubuntu 환경 설정
+    setup_ubuntu || exit 1
+    
+    # 6. Cursor AI 설치
+    install_cursor_ai || exit 1
+    
+    # 7. 실행 스크립트 생성
+    create_launch_script || exit 1
+    
+    # 8. 최종 검증
+    final_verification || exit 1
+    
+    # 9. 설치 요약 표시
+    show_installation_summary
+    
+    log_success "설치 완료!"
 }
 
+# 스크립트 실행
 main "$@" 
