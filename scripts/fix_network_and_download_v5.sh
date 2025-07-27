@@ -83,14 +83,33 @@ diagnose_network() {
         ((issues++))
     fi
     
-    # 2. DNS 서버 확인
+    # 2. DNS 서버 확인 및 설정
     log_info "DNS 서버 확인 중..."
     if [ -f /etc/resolv.conf ]; then
         log_info "현재 DNS 설정:"
         cat /etc/resolv.conf
     else
-        log_warning "DNS 설정 파일 없음"
-        ((issues++))
+        log_warning "DNS 설정 파일이 없습니다. 새로 생성합니다..."
+        
+        # DNS 설정 파일 생성
+        cat > /etc/resolv.conf << 'EOF'
+# Google DNS
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+
+# Cloudflare DNS
+nameserver 1.1.1.1
+nameserver 1.0.0.1
+
+# OpenDNS
+nameserver 208.67.222.222
+nameserver 208.67.220.220
+
+# Quad9 DNS
+nameserver 9.9.9.9
+nameserver 149.112.112.112
+EOF
+        log_success "DNS 설정 파일 생성 완료"
     fi
     
     # 3. DNS 해석 테스트
