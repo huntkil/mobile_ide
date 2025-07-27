@@ -5,9 +5,9 @@
 # ==========================================
 # 로컬 AppImage 파일을 사용한 오류 없는 설치
 # Author: Mobile IDE Team
-# Version: 6.0.0
+# Version: 6.0.2
 
-set -e
+# set -e 제거하여 오류 발생 시에도 스크립트 계속 진행
 
 # 색상 정의
 RED='\033[0;31m'
@@ -37,18 +37,34 @@ log_error() {
 optimize_system() {
     log_info "시스템 최적화 중..."
     
-    # 메모리 캐시 정리 (권한 문제 무시)
-    echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || log_warning "메모리 캐시 정리 권한 없음 (무시됨)"
+    # 메모리 캐시 정리 (완전히 안전하게 처리)
+    if [ -w /proc/sys/vm/drop_caches ]; then
+        echo 3 > /proc/sys/vm/drop_caches 2>/dev/null && log_info "메모리 캐시 정리 완료" || log_warning "메모리 캐시 정리 실패 (무시됨)"
+    else
+        log_warning "메모리 캐시 정리 권한 없음 (무시됨)"
+    fi
     
-    # 불필요한 프로세스 종료 (권한 문제 무시)
-    pkill -f "Xvfb" 2>/dev/null || log_warning "Xvfb 프로세스 종료 실패 (무시됨)"
-    pkill -f "cursor" 2>/dev/null || log_warning "cursor 프로세스 종료 실패 (무시됨)"
+    # 불필요한 프로세스 종료 (완전히 안전하게 처리)
+    pkill -f "Xvfb" 2>/dev/null && log_info "Xvfb 프로세스 종료 완료" || log_warning "Xvfb 프로세스 종료 실패 (무시됨)"
+    pkill -f "cursor" 2>/dev/null && log_info "cursor 프로세스 종료 완료" || log_warning "cursor 프로세스 종료 실패 (무시됨)"
     
-    # 저장공간 정리 (권한 문제 무시)
-    pkg clean 2>/dev/null || log_warning "패키지 캐시 정리 실패 (무시됨)"
-    pkg autoclean 2>/dev/null || log_warning "패키지 자동 정리 실패 (무시됨)"
-    rm -rf /tmp/* 2>/dev/null || log_warning "임시 파일 정리 실패 (무시됨)"
-    rm -rf ~/.cache/* 2>/dev/null || log_warning "사용자 캐시 정리 실패 (무시됨)"
+    # 저장공간 정리 (완전히 안전하게 처리)
+    pkg clean 2>/dev/null && log_info "패키지 캐시 정리 완료" || log_warning "패키지 캐시 정리 실패 (무시됨)"
+    pkg autoclean 2>/dev/null && log_info "패키지 자동 정리 완료" || log_warning "패키지 자동 정리 실패 (무시됨)"
+    
+    # 임시 파일 정리 (완전히 안전하게 처리)
+    if [ -d /tmp ] && [ -w /tmp ]; then
+        rm -rf /tmp/* 2>/dev/null && log_info "임시 파일 정리 완료" || log_warning "임시 파일 정리 실패 (무시됨)"
+    else
+        log_warning "임시 파일 정리 권한 없음 (무시됨)"
+    fi
+    
+    # 사용자 캐시 정리 (완전히 안전하게 처리)
+    if [ -d ~/.cache ] && [ -w ~/.cache ]; then
+        rm -rf ~/.cache/* 2>/dev/null && log_info "사용자 캐시 정리 완료" || log_warning "사용자 캐시 정리 실패 (무시됨)"
+    else
+        log_warning "사용자 캐시 정리 권한 없음 (무시됨)"
+    fi
     
     log_success "시스템 최적화 완료"
 }
