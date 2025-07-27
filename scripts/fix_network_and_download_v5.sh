@@ -290,6 +290,7 @@ fix_cursor_download() {
     # 1. 로컬 파일 확인 (가장 빠른 방법)
     log_info "로컬 Cursor AI 파일 확인 중..."
     local local_files=(
+        "Cursor-1.2.1-aarch64.AppImage"  # 프로젝트 루트에 있는 파일 (우선)
         "~/cursor.AppImage"
         "~/Cursor-1.2.1-aarch64.AppImage"
         "~/storage/shared/TermuxWork/cursor.AppImage"
