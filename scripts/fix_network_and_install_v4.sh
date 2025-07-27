@@ -155,12 +155,44 @@ fix_directory_issues() {
         ls -la
     "
     
-    # 3. Termux에서 디렉토리 확인
-    if [ -d ~/ubuntu/home/cursor-ide ]; then
-        log_success "cursor-ide 디렉토리 확인됨"
+    # 3. Termux에서 디렉토리 확인 (수정된 검증)
+    log_info "디렉토리 검증 중..."
+    
+    # Ubuntu 환경 내부에서 디렉토리 확인
+    if proot-distro login ubuntu -- bash -c "test -d /home/cursor-ide"; then
+        log_success "Ubuntu 내부에서 cursor-ide 디렉토리 확인됨"
     else
-        log_error "cursor-ide 디렉토리 생성 실패"
+        log_error "Ubuntu 내부에서 cursor-ide 디렉토리 생성 실패"
         return 1
+    fi
+    
+    # Termux에서 Ubuntu 마운트 포인트 확인
+    if [ -d ~/ubuntu ]; then
+        log_success "Ubuntu 환경 마운트 포인트 확인됨"
+    else
+        log_error "Ubuntu 환경 마운트 포인트 없음"
+        return 1
+    fi
+    
+    # cursor-ide 디렉토리 경로 확인 (여러 가능한 경로 시도)
+    local possible_paths=(
+        "~/ubuntu/home/cursor-ide"
+        "~/ubuntu/root/cursor-ide"
+        "~/ubuntu/cursor-ide"
+    )
+    
+    local found_path=""
+    for path in "${possible_paths[@]}"; do
+        if [ -d "$path" ]; then
+            found_path="$path"
+            log_success "cursor-ide 디렉토리 발견: $path"
+            break
+        fi
+    done
+    
+    if [ -z "$found_path" ]; then
+        log_warning "Termux에서 cursor-ide 디렉토리를 찾을 수 없지만 Ubuntu 내부에서는 존재합니다."
+        log_info "이는 정상적인 상황입니다. Ubuntu 환경 내부에서 작업이 진행됩니다."
     fi
     
     log_success "디렉토리 문제 해결 완료"
@@ -310,31 +342,31 @@ verify_installation() {
     
     local errors=0
     
-    # 1. 디렉토리 확인
-    if [ -d ~/ubuntu/home/cursor-ide ]; then
-        log_success "cursor-ide 디렉토리 확인됨"
+    # 1. Ubuntu 환경 내부에서 디렉토리 확인
+    if proot-distro login ubuntu -- bash -c "test -d /home/cursor-ide"; then
+        log_success "Ubuntu 내부에서 cursor-ide 디렉토리 확인됨"
     else
-        log_error "cursor-ide 디렉토리 없음"
+        log_error "Ubuntu 내부에서 cursor-ide 디렉토리 없음"
         ((errors++))
     fi
     
-    # 2. AppImage 확인
-    if [ -f ~/ubuntu/home/cursor-ide/cursor.AppImage ]; then
-        log_success "cursor.AppImage 확인됨"
+    # 2. Ubuntu 환경 내부에서 AppImage 확인
+    if proot-distro login ubuntu -- bash -c "test -f /home/cursor-ide/cursor.AppImage"; then
+        log_success "Ubuntu 내부에서 cursor.AppImage 확인됨"
     else
-        log_error "cursor.AppImage 없음"
+        log_error "Ubuntu 내부에서 cursor.AppImage 없음"
         ((errors++))
     fi
     
-    # 3. 추출된 파일 확인
-    if [ -d ~/ubuntu/home/cursor-ide/squashfs-root ]; then
-        log_success "squashfs-root 디렉토리 확인됨"
+    # 3. Ubuntu 환경 내부에서 추출된 파일 확인
+    if proot-distro login ubuntu -- bash -c "test -d /home/cursor-ide/squashfs-root"; then
+        log_success "Ubuntu 내부에서 squashfs-root 디렉토리 확인됨"
     else
-        log_error "squashfs-root 디렉토리 없음"
+        log_error "Ubuntu 내부에서 squashfs-root 디렉토리 없음"
         ((errors++))
     fi
     
-    # 4. 실행 스크립트 확인
+    # 4. Termux에서 실행 스크립트 확인
     if [ -f ~/launch.sh ]; then
         log_success "launch.sh 확인됨"
     else
