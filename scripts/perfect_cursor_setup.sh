@@ -171,13 +171,32 @@ install_ubuntu_environment() {
         fi
     fi
     
-    # Ubuntu 설치
+    # Ubuntu 설치 시도
     if proot-distro install ubuntu; then
         log_success "Ubuntu 환경 설치 완료"
         return 0
     else
         log_error "Ubuntu 환경 설치 실패"
-        return 1
+        log_info "자동 해결 스크립트를 실행합니다..."
+        
+        # Ubuntu 설치 실패 자동 해결 스크립트 실행
+        if [ -f "./scripts/fix_ubuntu_installation.sh" ]; then
+            log_info "Ubuntu 설치 실패 자동 해결 스크립트 실행 중..."
+            chmod +x ./scripts/fix_ubuntu_installation.sh
+            if ./scripts/fix_ubuntu_installation.sh; then
+                log_success "Ubuntu 환경 설치 실패 문제 해결 완료"
+                return 0
+            else
+                log_error "Ubuntu 환경 설치 실패 문제 해결 실패"
+                return 1
+            fi
+        else
+            log_error "Ubuntu 설치 실패 자동 해결 스크립트를 찾을 수 없습니다."
+            log_info "수동으로 다음 명령어를 실행하세요:"
+            echo "  chmod +x scripts/fix_ubuntu_installation.sh"
+            echo "  ./scripts/fix_ubuntu_installation.sh"
+            return 1
+        fi
     fi
 }
 
