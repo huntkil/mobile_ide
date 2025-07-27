@@ -1,11 +1,7 @@
----
-alwaysApply: true
----
-
-# Cursor AI Workspace Rules - Galaxy Android IDE Project
+# Cursor AI Workspace Rules - Galaxy Android IDE Project (v3.1.0)
 
 ## Project Overview
-This project aims to create a solution for running Cursor AI IDE on Samsung Galaxy Android devices through multiple implementation approaches including Termux-based Linux environment, React Native app, PWA, and Cordova hybrid app.
+This project aims to create a solution for running Cursor AI IDE on Samsung Galaxy Android devices through multiple implementation approaches including Termux-based Linux environment, React Native app, PWA, and Cordova hybrid app. **v3.1.0 introduces comprehensive solutions for storage optimization, VNC server integration, and network/permission issues.**
 
 ## Code Style & Standards
 
@@ -16,12 +12,16 @@ This project aims to create a solution for running Cursor AI IDE on Samsung Gala
 - Add detailed JSDoc comments for all functions and classes
 - Use semantic versioning for releases
 - Maintain consistent indentation (2 spaces)
+- **NEW**: Include storage optimization checks in all scripts
+- **NEW**: Implement VNC server fallback mechanisms
+- **NEW**: Add network resilience with multiple DNS servers
 
 ### File Naming Conventions
 - Use kebab-case for file names: `cursor-ide-launcher.ts`
 - Use PascalCase for React components: `CodeEditor.tsx`
 - Use camelCase for utility functions: `setupEnvironment.js`
 - Use UPPER_CASE for constants: `API_ENDPOINTS.ts`
+- **NEW**: Use descriptive prefixes for script types: `termux_`, `vnc_`, `cleanup_`
 
 ### Directory Structure
 ```
@@ -33,8 +33,11 @@ project-root/
 │   ├── types/         # TypeScript type definitions
 │   └── config/        # Configuration files
 ├── scripts/           # Shell scripts for Termux setup
+│   ├── termux_local_setup.sh    # Main installation script (v3.1.0)
+│   ├── cleanup.sh               # Storage optimization (NEW)
+│   └── vnc_setup.sh            # VNC server configuration (NEW)
 ├── backend/           # Node.js server code
-├── docs/             # Documentation
+├── docs/             # Documentation (Updated with v3.1.0 features)
 └── tests/            # Test files
 ```
 
@@ -47,208 +50,229 @@ project-root/
 - Test on multiple Android versions (7.0+)
 - Optimize for ARM64 architecture
 - Include memory and battery optimization
+- **NEW**: Implement storage space checks before major operations
+- **NEW**: Provide external storage fallback mechanisms
+- **NEW**: Include VNC server setup for GUI display
+- **NEW**: Add network resilience with offline capabilities
 
-### React Native Development
-- Use functional components with hooks
-- Implement proper state management (Redux/Context)
-- Follow React Native performance best practices
-- Handle device orientation changes
-- Implement proper keyboard handling for mobile
-- Use TypeScript interfaces for props and state
+### Storage Optimization Standards (v3.1.0)
+- Check available storage space before installations
+- Implement automatic cleanup mechanisms
+- Provide external storage utilization options
+- Include cache and temporary file management
+- Monitor storage usage during operations
 
-### Backend Development
-- Use Express.js with TypeScript
-- Implement proper API versioning (/api/v1/)
-- Use middleware for authentication and logging
-- Implement rate limiting and security headers
-- Use WebSockets for real-time features
-- Follow RESTful API design principles
+```bash
+# Storage check template
+check_storage_space() {
+    local required_space_gb=$1
+    local available_space=$(df / | awk 'NR==2{printf "%.0f", $4/1024/1024}')
+    
+    if [ "$available_space" -lt "$required_space_gb" ]; then
+        log_warning "Insufficient storage space. Running cleanup..."
+        ./cleanup.sh
+        return 1
+    fi
+    return 0
+}
+```
 
-### PWA Development
-- Implement service workers for offline functionality
-- Use Workbox for caching strategies
-- Follow web accessibility guidelines (WCAG 2.1)
-- Implement responsive design with mobile-first approach
-- Use Web Components for reusable UI elements
-- Optimize for Core Web Vitals
+### VNC Server Integration (v3.1.0)
+- Implement multiple VNC server options (tigervnc, x11vnc, tightvncserver)
+- Provide fallback mechanisms when VNC packages are unavailable
+- Include headless mode for systems without VNC support
+- Optimize VNC settings for mobile devices
 
-## Security Requirements
+```bash
+# VNC server setup template
+setup_vnc_server() {
+    local vnc_packages=("tigervnc" "x11vnc" "tightvncserver")
+    
+    for package in "${vnc_packages[@]}"; do
+        if pkg install "$package" 2>/dev/null; then
+            log_success "VNC server installed: $package"
+            return 0
+        fi
+    done
+    
+    log_warning "No VNC packages available. Using headless mode."
+    return 1
+}
+```
 
-### Data Protection
-- Never store sensitive data in plain text
-- Use HTTPS for all network communications
-- Implement proper input validation and sanitization
-- Use secure authentication methods (JWT with refresh tokens)
-- Encrypt local storage data
-- Follow OWASP mobile security guidelines
+### Network Resilience Standards (v3.1.0)
+- Implement multiple DNS servers for reliability
+- Provide offline installation capabilities using local files
+- Include network connectivity checks before downloads
+- Add retry mechanisms with exponential backoff
 
-### Android Permissions
-- Request minimal necessary permissions
-- Implement runtime permission handling
-- Provide clear explanations for permission requests
-- Use scoped storage for file operations
-- Implement proper app sandboxing
+```bash
+# Network setup template
+setup_network_resilience() {
+    # Multiple DNS servers
+    cat > /etc/resolv.conf << EOF
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+nameserver 1.1.1.1
+nameserver 208.67.222.222
+EOF
+    
+    # Test connectivity
+    for dns in "8.8.8.8" "google.com"; do
+        if ping -c 1 "$dns" &>/dev/null; then
+            return 0
+        fi
+    done
+    
+    log_warning "Network connectivity issues detected"
+    return 1
+}
+```
 
-## Performance Optimization
+## Error Handling & Recovery (Enhanced v3.1.0)
 
-### Mobile-Specific Optimizations
-- Implement lazy loading for components and modules
-- Use virtual scrolling for large lists
-- Optimize bundle size with tree shaking
-- Implement proper memory management
-- Use efficient image formats (WebP, AVIF)
-- Minimize main thread blocking operations
+### Comprehensive Error Classification
+- **STORAGE-001**: Storage space insufficient
+- **DISPLAY-001**: GUI display issues
+- **NETWORK-001**: DNS resolution failures
+- **PERMISSION-001**: External storage permission issues
+- **PACKAGE-001**: Missing package dependencies
+- **SCRIPT-002**: Script syntax errors
 
-### Code Editor Optimizations
-- Use incremental parsing for syntax highlighting
-- Implement efficient diff algorithms
-- Use worker threads for heavy computations
-- Implement proper debouncing for user inputs
-- Optimize rendering for large files
+### Error Recovery Protocols
+```bash
+# Enhanced error handler template
+handle_error() {
+    local error_code=$1
+    local error_message="$2"
+    
+    case "$error_code" in
+        "STORAGE-001")
+            log_error "Storage space insufficient: $error_message"
+            ./cleanup.sh
+            check_external_storage
+            ;;
+        "DISPLAY-001")
+            log_error "GUI display issue: $error_message"
+            setup_vnc_server
+            setup_headless_mode
+            ;;
+        "NETWORK-001")
+            log_error "Network issue: $error_message"
+            setup_network_resilience
+            use_offline_installation
+            ;;
+        *)
+            log_error "Unknown error: $error_code - $error_message"
+            ;;
+    esac
+}
+```
 
-## Testing Requirements
+### Monitoring and Observability (Enhanced)
+- Implement comprehensive logging with storage usage tracking
+- Monitor VNC server status and performance
+- Track network connectivity and DNS resolution times
+- Add storage cleanup scheduling
+- Include performance metrics for mobile optimization
 
-### Test Coverage
-- Maintain minimum 80% code coverage
-- Write unit tests for all utility functions
-- Implement integration tests for API endpoints
-- Create end-to-end tests for critical user flows
-- Test on multiple Android devices and versions
+```bash
+# Enhanced monitoring template
+monitor_system_health() {
+    # Storage monitoring
+    local storage_usage=$(df / | awk 'NR==2{print $5}' | sed 's/%//')
+    if [ "$storage_usage" -gt 85 ]; then
+        log_warning "Storage usage high: ${storage_usage}%"
+        ./cleanup.sh
+    fi
+    
+    # VNC server monitoring
+    if ! pgrep -x "Xtigervnc\|x11vnc" > /dev/null; then
+        log_warning "VNC server not running"
+        setup_vnc_server
+    fi
+    
+    # Network monitoring
+    if ! ping -c 1 8.8.8.8 &>/dev/null; then
+        log_warning "Network connectivity issues"
+        setup_network_resilience
+    fi
+}
+```
 
-### Testing Tools
-- Jest for unit testing
-- React Testing Library for component tests
-- Supertest for API testing
-- Detox for E2E mobile testing
-- Lighthouse for PWA performance testing
+## Mobile-Specific Optimizations (Enhanced)
 
-## Documentation Standards
+### Storage Management
+- Implement intelligent caching strategies
+- Use external storage for large files when possible
+- Provide automatic cleanup scheduling
+- Monitor and alert on low storage conditions
+
+### VNC Display Optimization
+- Optimize VNC resolution for mobile screens (1024x768)
+- Use appropriate color depth (24-bit) for quality/performance balance
+- Implement touch gesture mapping for VNC viewers
+- Provide mobile-friendly VNC client recommendations
+
+### Battery and Performance
+- Implement CPU frequency scaling awareness
+- Use memory-efficient Electron flags
+- Optimize X11 server settings for mobile
+- Provide power management integration
+
+## Documentation Standards (Updated v3.1.0)
 
 ### Code Documentation
-- Write comprehensive README files for each module
-- Include setup and installation instructions
-- Provide API documentation with examples
-- Create troubleshooting guides
-- Maintain changelog with semantic versioning
+- Document all storage optimization techniques
+- Include VNC server setup procedures
+- Provide network troubleshooting guides
+- Document mobile-specific optimizations
+- Include performance benchmarking results
 
 ### User Documentation
-- Create step-by-step installation guides
-- Include screenshots and video tutorials
-- Provide FAQ section
-- Document known limitations and workarounds
-- Maintain device compatibility matrix
+- Create comprehensive troubleshooting guides for new error types
+- Include VNC client setup instructions for Android
+- Provide storage management best practices
+- Document offline installation procedures
+- Include mobile usage optimization tips
 
-## Deployment & CI/CD
+## Quality Assurance (Enhanced)
 
-### Build Process
-- Use GitHub Actions for continuous integration
-- Implement automated testing on pull requests
-- Create automated builds for different environments
-- Use semantic release for version management
-- Implement security scanning in CI pipeline
+### Testing Requirements
+- Test storage optimization on devices with limited space
+- Verify VNC server functionality across different Android versions
+- Test network resilience under various connectivity conditions
+- Validate external storage permission handling
+- Test headless mode functionality
 
-### Release Management
-- Create staging and production environments
-- Implement feature flags for gradual rollouts
-- Use blue-green deployment strategies
-- Maintain rollback capabilities
-- Monitor application performance post-deployment
+### Performance Testing
+- Benchmark storage cleanup efficiency
+- Measure VNC server latency and responsiveness
+- Test memory usage with various optimization flags
+- Validate battery consumption under different usage patterns
+- Test startup times with storage constraints
 
-## Error Handling & Logging
+## Security Considerations (Enhanced)
 
-### Error Management
-- Implement global error handlers
-- Use structured logging with appropriate levels
-- Include contextual information in error messages
-- Implement user-friendly error displays
-- Create error reporting mechanisms
+### Storage Security
+- Implement secure cleanup that doesn't expose sensitive data
+- Validate external storage permissions properly
+- Ensure VNC server uses secure authentication
+- Protect against unauthorized access to stored files
 
-### Monitoring
-- Implement application performance monitoring
-- Track user analytics and usage patterns
-- Monitor resource usage (CPU, memory, battery)
-- Set up alerts for critical errors
-- Maintain performance benchmarks
+### Network Security
+- Use secure DNS servers (DNS over HTTPS when available)
+- Validate downloaded files for integrity
+- Implement secure VNC connections when possible
+- Protect against network-based attacks
 
-## Accessibility Requirements
+---
 
-### Mobile Accessibility
-- Implement proper ARIA labels
-- Ensure keyboard navigation support
-- Provide sufficient color contrast ratios
-- Support screen readers
-- Implement proper focus management
-- Test with accessibility tools
+**Version**: 3.1.0  
+**Last Updated**: 2025-07-27  
+**Key Enhancements**: Storage optimization, VNC server integration, network resilience, comprehensive error handling
 
-## Internationalization
-
-### Multi-language Support
-- Use i18n libraries for text localization
-- Support RTL languages
-- Implement proper date and number formatting
-- Handle different keyboard layouts
-- Test with various locales
-
-## AI Integration Guidelines
-
-### Cursor AI Integration
-- Implement proper API rate limiting
-- Handle AI service downtime gracefully
-- Cache AI responses when appropriate
-- Provide fallback mechanisms
-- Implement user privacy controls for AI features
-
-### Code Quality with AI
-- Use AI for code review suggestions
-- Implement AI-powered error detection
-- Provide intelligent code completion
-- Use AI for documentation generation
-- Implement AI-assisted refactoring
-
-## Environment Variables
-
-### Configuration Management
-```bash
-# Development
-NODE_ENV=development
-API_BASE_URL=http://localhost:3000
-LOG_LEVEL=debug
-
-# Production
-NODE_ENV=production
-API_BASE_URL=https://api.cursor-mobile.com
-LOG_LEVEL=info
-```
-
-## Git Workflow
-
-### Branching Strategy
-- Use GitFlow branching model
-- Create feature branches from develop
-- Use conventional commit messages
-- Require code reviews for all changes
-- Implement automated testing on branches
-
-### Commit Message Format
-```
-type(scope): subject
-
-body
-
-footer
-```
-
-Types: feat, fix, docs, style, refactor, test, chore
-
-## Dependencies Management
-
-### Package Management
-- Use npm/yarn for JavaScript dependencies
-- Pin exact versions for production dependencies
-- Regular security audits with npm audit
-- Keep dependencies up to date
-- Document critical dependencies
-
+**Note**: These enhanced rules incorporate all lessons learned from resolving storage, display, network, and permission issues encountered during v3.1.0 development. All team members must follow these updated guidelines to ensure robust mobile IDE functionality.
 ---
 
 **Note**: These rules should be reviewed and updated regularly as the project evolves. All team members must follow these guidelines to ensure code consistency and project success.
