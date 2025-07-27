@@ -339,6 +339,63 @@ proot-distro login ubuntu -- bash -c '
 EOF
     chmod +x "$CURSOR_DIR/debug.sh"
     
+    cat > "$CURSOR_DIR/cleanup.sh" << 'EOF'
+#!/bin/bash
+echo "=== 긴급 저장공간 정리 ==="
+echo "현재 저장공간 상태:"
+df -h | head -5
+
+echo ""
+echo "정리 시작..."
+
+# 1. Termux 패키지 캐시 정리
+echo "1. Termux 패키지 캐시 정리 중..."
+pkg clean 2>/dev/null || true
+apt clean 2>/dev/null || true
+apt autoremove -y 2>/dev/null || true
+
+# 2. 임시 파일 정리
+echo "2. 임시 파일 정리 중..."
+rm -rf /tmp/* 2>/dev/null || true
+rm -rf ~/.cache/* 2>/dev/null || true
+rm -rf ~/.*~* 2>/dev/null || true
+
+# 3. 로그 파일 정리
+echo "3. 로그 파일 정리 중..."
+find ~ -name "*.log" -type f -size +10M -delete 2>/dev/null || true
+find ~ -name "*.log.*" -type f -delete 2>/dev/null || true
+
+# 4. 이전 설치 잔여물 정리
+echo "4. 이전 설치 잔여물 정리 중..."
+rm -rf ~/ubuntu 2>/dev/null || true
+rm -rf ~/.local/share/proot-distro 2>/dev/null || true
+proot-distro remove ubuntu 2>/dev/null || true
+
+# 5. 불필요한 AppImage 파일 정리
+echo "5. 중복 AppImage 파일 정리 중..."
+find ~ -name "*.AppImage" -type f ! -name "Cursor-*" -delete 2>/dev/null || true
+
+# 6. 브라우저 캐시 정리 (있다면)
+echo "6. 브라우저 캐시 정리 중..."
+rm -rf ~/.mozilla/firefox/*/Cache* 2>/dev/null || true
+rm -rf ~/.config/google-chrome/*/Cache* 2>/dev/null || true
+
+echo ""
+echo "정리 완료! 현재 저장공간 상태:"
+df -h | head -5
+
+echo ""
+echo "메모리 상태:"
+free -h
+
+echo ""
+echo "🎯 권장사항:"
+echo "- 불필요한 앱을 삭제하여 최소 3GB 이상의 여유 공간을 확보하세요"
+echo "- Android 설정 → 저장공간에서 캐시 정리를 실행하세요"
+echo "- 사진, 동영상 등 큰 파일을 클라우드나 외부 저장소로 이동하세요"
+EOF
+     chmod +x "$CURSOR_DIR/cleanup.sh"
+    
     log_success "All launcher scripts created successfully."
 }
 
