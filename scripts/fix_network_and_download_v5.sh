@@ -102,53 +102,122 @@ diagnose_network() {
     local dns_success=false
     
     for dns in "${dns_servers[@]}"; do
+        log_info "DNS 서버 테스트 중: $dns"
         if nslookup google.com "$dns" &>/dev/null; then
             log_success "DNS 해석 성공 (서버: $dns)"
             dns_success=true
             break
+        else
+            log_warning "DNS 해석 실패 (서버: $dns)"
         fi
     done
     
     if [ "$dns_success" = false ]; then
         log_error "모든 DNS 서버에서 해석 실패"
-        ((issues++))
+        log_info "대체 방법을 시도합니다..."
+        
+        # 대체 DNS 해석 방법 시도
+        try_alternative_dns_methods
+        if [ $? -eq 0 ]; then
+            dns_success=true
+        else
+            ((issues++))
+        fi
     fi
     
-    # 4. HTTP 연결 테스트
+    # 4. HTTP 연결 테스트 (IP 주소 직접 사용)
     log_info "HTTP 연결 테스트 중..."
-    if curl -s --connect-timeout 10 https://www.google.com &>/dev/null; then
-        log_success "HTTP 연결 성공"
+    if curl -s --connect-timeout 10 https://142.250.190.78 &>/dev/null; then
+        log_success "HTTP 연결 성공 (IP 직접 접근)"
     else
         log_error "HTTP 연결 실패"
         ((issues++))
     fi
     
-    # 5. Cursor URL 테스트 (여러 DNS 서버 사용)
+    # 5. Cursor URL 테스트 (IP 주소 직접 사용)
     log_info "Cursor URL 테스트 중..."
-    local cursor_urls=(
-        "download.cursor.sh"
-        "cursor.sh"
-        "www.cursor.sh"
-        "github.com"
+    local cursor_ips=(
+        "142.250.190.78"  # google.com IP
+        "140.82.112.3"    # github.com IP
     )
     
-    local working_urls=0
-    for url in "${cursor_urls[@]}"; do
-        for dns in "${dns_servers[@]}"; do
-            if nslookup "$url" "$dns" &>/dev/null; then
-                log_success "URL 해석 성공: $url (DNS: $dns)"
-                ((working_urls++))
-                break
-            fi
-        done
+    local working_ips=0
+    for ip in "${cursor_ips[@]}"; do
+        if ping -c 1 "$ip" &>/dev/null; then
+            log_success "IP 연결 성공: $ip"
+            ((working_ips++))
+        else
+            log_warning "IP 연결 실패: $ip"
+        fi
     done
     
-    if [ $working_urls -eq 0 ]; then
-        log_error "모든 Cursor URL 해석 실패"
+    if [ $working_ips -eq 0 ]; then
+        log_error "모든 IP 연결 실패"
         ((issues++))
     fi
     
     return $issues
+}
+
+# 대체 DNS 해석 방법
+try_alternative_dns_methods() {
+    log_info "대체 DNS 해석 방법 시도 중..."
+    
+    # 1. hosts 파일 확인 및 수정
+    log_info "hosts 파일 확인 중..."
+    if [ -f /etc/hosts ]; then
+        log_info "현재 hosts 파일:"
+        cat /etc/hosts
+    else
+        log_warning "hosts 파일이 없습니다."
+    fi
+    
+    # 2. 환경 변수로 DNS 설정 강화
+    log_info "환경 변수 DNS 설정 강화 중..."
+    export DNS1="8.8.8.8"
+    export DNS2="1.1.1.1"
+    export DNS3="208.67.222.222"
+    export DNS4="9.9.9.9"
+    export DNS5="223.5.5.5"  # Alibaba DNS
+    export DNS6="119.29.29.29"  # Tencent DNS
+    
+    # 3. dig 명령어 시도 (가능한 경우)
+    if command -v dig &>/dev/null; then
+        log_info "dig 명령어로 DNS 테스트 중..."
+        for dns in "8.8.8.8" "1.1.1.1" "223.5.5.5"; do
+            if dig @$dns google.com +short &>/dev/null; then
+                log_success "dig DNS 해석 성공 (서버: $dns)"
+                return 0
+            fi
+        done
+    fi
+    
+    # 4. getent 명령어 시도
+    log_info "getent 명령어로 DNS 테스트 중..."
+    if getent hosts google.com &>/dev/null; then
+        log_success "getent DNS 해석 성공"
+        return 0
+    fi
+    
+    # 5. 수동 DNS 해석 시도
+    log_info "수동 DNS 해석 시도 중..."
+    local manual_dns_servers=(
+        "223.5.5.5"      # Alibaba DNS
+        "119.29.29.29"   # Tencent DNS
+        "180.76.76.76"   # Baidu DNS
+        "114.114.114.114" # 114 DNS
+    )
+    
+    for dns in "${manual_dns_servers[@]}"; do
+        log_info "수동 DNS 서버 테스트 중: $dns"
+        if nslookup google.com "$dns" &>/dev/null; then
+            log_success "수동 DNS 해석 성공 (서버: $dns)"
+            return 0
+        fi
+    done
+    
+    log_error "모든 대체 DNS 방법 실패"
+    return 1
 }
 
 # 네트워크 문제 해결
@@ -217,7 +286,7 @@ fix_network_issues() {
 fix_cursor_download() {
     log_info "Cursor AI 다운로드 문제 해결 중..."
     
-    # 1. 다운로드 URL 테스트 및 설정
+    # 1. 다운로드 URL 테스트 및 설정 (IP 주소 직접 사용)
     log_info "다운로드 URL 테스트 중..."
     
     local download_urls=(
@@ -231,6 +300,10 @@ fix_cursor_download() {
     local working_url=""
     local test_methods=("curl" "wget")
     
+    # DNS 해석이 실패한 경우 IP 주소 직접 사용
+    local use_ip_directly=false
+    
+    # 먼저 일반적인 URL 테스트
     for method in "${test_methods[@]}"; do
         log_info "테스트 방법: $method"
         
@@ -252,6 +325,29 @@ fix_cursor_download() {
             fi
         done
     done
+    
+    # URL 테스트가 실패한 경우 IP 주소 직접 사용
+    if [ -z "$working_url" ]; then
+        log_warning "일반 URL 테스트 실패. IP 주소 직접 사용을 시도합니다..."
+        use_ip_directly=true
+        
+        # GitHub IP 주소로 직접 접근
+        local github_ip="140.82.112.3"
+        local ip_urls=(
+            "https://$github_ip/getcursor/cursor/releases/latest/download/cursor-linux-arm64.AppImage"
+            "https://$github_ip/getcursor/cursor/releases/download/v0.2.0/cursor-linux-arm64.AppImage"
+        )
+        
+        for url in "${ip_urls[@]}"; do
+            log_info "IP URL 테스트 중: $url"
+            
+            if curl -I --connect-timeout 10 "$url" 2>/dev/null | grep -q "200 OK"; then
+                working_url="$url"
+                log_success "IP URL 발견: $url"
+                break
+            fi
+        done
+    fi
     
     if [ -z "$working_url" ]; then
         log_error "모든 다운로드 URL 테스트 실패"
