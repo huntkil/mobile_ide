@@ -94,13 +94,18 @@
   ```
 
 ### 10. **VNC 패키지 부재 오류 (PACKAGE-001)**
-- **오류**: `E: Unable to locate package tigervnc`
-- **원인**: Termux 저장소에 tigervnc 패키지가 없음.
+- **오류**: `E: Unable to locate package tigervnc`, `E: Unable to locate package termux-x11-nightly`
+- **원인**: Termux 저장소에 tigervnc, termux-x11-nightly 패키지가 없음.
 - **해결책**: 대안 VNC 패키지 사용 또는 헤드리스 모드 실행
   ```bash
   # 대안 VNC 패키지 검색 및 설치
   pkg search vnc
-  pkg install x11vnc  # 또는 tightvncserver
+  pkg search x11
+  pkg install x11vnc || pkg install tightvncserver || pkg install vncserver
+  
+  # Termux:X11 대안 (공식 저장소)
+  pkg install x11-repo
+  pkg install termux-x11
   
   # VNC 없이 헤드리스 모드 실행
   ./run_cursor_headless.sh
