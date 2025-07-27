@@ -121,7 +121,8 @@ diagnose_network() {
         if [ $? -eq 0 ]; then
             dns_success=true
         else
-            ((issues++))
+            log_warning "DNS 해석 실패하지만 IP 주소 직접 사용으로 진행합니다..."
+            # DNS 실패해도 계속 진행 (IP 주소 직접 사용)
         fi
     fi
     
@@ -286,7 +287,26 @@ fix_network_issues() {
 fix_cursor_download() {
     log_info "Cursor AI 다운로드 문제 해결 중..."
     
-    # 1. 다운로드 URL 테스트 및 설정 (IP 주소 직접 사용)
+    # 1. 로컬 파일 확인 (가장 빠른 방법)
+    log_info "로컬 Cursor AI 파일 확인 중..."
+    local local_files=(
+        "~/cursor.AppImage"
+        "~/Cursor-1.2.1-aarch64.AppImage"
+        "~/storage/shared/TermuxWork/cursor.AppImage"
+        "~/storage/shared/Download/cursor.AppImage"
+        "~/storage/shared/Download/Cursor-1.2.1-aarch64.AppImage"
+    )
+    
+    for file in "${local_files[@]}"; do
+        if [ -f "$file" ]; then
+            log_success "로컬 파일 발견: $file"
+            if copy_local_cursor_file "$file"; then
+                return 0
+            fi
+        fi
+    done
+    
+    # 2. 다운로드 URL 테스트 및 설정 (IP 주소 직접 사용)
     log_info "다운로드 URL 테스트 중..."
     
     local download_urls=(
@@ -331,7 +351,7 @@ fix_cursor_download() {
         log_warning "일반 URL 테스트 실패. IP 주소 직접 사용을 시도합니다..."
         use_ip_directly=true
         
-        # GitHub IP 주소로 직접 접근
+        # GitHub IP 주소로 직접 접근 (Host 헤더 추가)
         local github_ip="140.82.112.3"
         local ip_urls=(
             "https://$github_ip/getcursor/cursor/releases/latest/download/cursor-linux-arm64.AppImage"
@@ -341,7 +361,8 @@ fix_cursor_download() {
         for url in "${ip_urls[@]}"; do
             log_info "IP URL 테스트 중: $url"
             
-            if curl -I --connect-timeout 10 "$url" 2>/dev/null | grep -q "200 OK"; then
+            # Host 헤더를 추가하여 GitHub 서버 인식
+            if curl -I --connect-timeout 10 -H "Host: github.com" "$url" 2>/dev/null | grep -q "200 OK"; then
                 working_url="$url"
                 log_success "IP URL 발견: $url"
                 break
@@ -353,12 +374,12 @@ fix_cursor_download() {
         log_error "모든 다운로드 URL 테스트 실패"
         log_info "대체 방법을 시도합니다..."
         
-        # 2. 대체 다운로드 방법 시도
+        # 3. 대체 다운로드 방법 시도
         try_alternative_download_methods
         return $?
     fi
     
-    # 3. Cursor AI 다운로드
+    # 4. Cursor AI 다운로드
     log_info "Cursor AI 다운로드 중..."
     if proot-distro login ubuntu -- bash -c "
         cd /home/cursor-ide
@@ -368,6 +389,24 @@ fix_cursor_download() {
         return 0
     else
         log_error "Cursor AI 다운로드 실패"
+        return 1
+    fi
+}
+
+# 로컬 Cursor 파일 복사
+copy_local_cursor_file() {
+    local source_file="$1"
+    log_info "로컬 파일 복사 중: $source_file"
+    
+    if proot-distro login ubuntu -- bash -c "
+        cd /home/cursor-ide
+        cp '$source_file' cursor.AppImage
+        chmod +x cursor.AppImage
+    "; then
+        log_success "로컬 파일 복사 완료"
+        return 0
+    else
+        log_error "로컬 파일 복사 실패"
         return 1
     fi
 }
