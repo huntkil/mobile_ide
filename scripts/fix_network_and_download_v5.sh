@@ -89,35 +89,28 @@ diagnose_network() {
         log_info "현재 DNS 설정:"
         cat /etc/resolv.conf
     else
-        log_warning "DNS 설정 파일이 없습니다. 새로 생성합니다..."
+        log_warning "DNS 설정 파일이 없습니다. 환경 변수로 설정합니다..."
         
-        # DNS 설정 파일 생성
-        cat > /etc/resolv.conf << 'EOF'
-# Google DNS
-nameserver 8.8.8.8
-nameserver 8.8.4.4
-
-# Cloudflare DNS
-nameserver 1.1.1.1
-nameserver 1.0.0.1
-
-# OpenDNS
-nameserver 208.67.222.222
-nameserver 208.67.220.220
-
-# Quad9 DNS
-nameserver 9.9.9.9
-nameserver 149.112.112.112
-EOF
-        log_success "DNS 설정 파일 생성 완료"
+        # 환경 변수로 DNS 설정
+        export DNS_SERVERS="8.8.8.8 8.8.4.4 1.1.1.1 1.0.0.1 208.67.222.222 208.67.220.220 9.9.9.9 149.112.112.112"
+        log_success "DNS 서버 환경 변수 설정 완료"
     fi
     
-    # 3. DNS 해석 테스트
+    # 3. DNS 해석 테스트 (여러 DNS 서버 시도)
     log_info "DNS 해석 테스트 중..."
-    if nslookup google.com &>/dev/null; then
-        log_success "DNS 해석 성공"
-    else
-        log_error "DNS 해석 실패"
+    local dns_servers=("8.8.8.8" "1.1.1.1" "208.67.222.222" "9.9.9.9")
+    local dns_success=false
+    
+    for dns in "${dns_servers[@]}"; do
+        if nslookup google.com "$dns" &>/dev/null; then
+            log_success "DNS 해석 성공 (서버: $dns)"
+            dns_success=true
+            break
+        fi
+    done
+    
+    if [ "$dns_success" = false ]; then
+        log_error "모든 DNS 서버에서 해석 실패"
         ((issues++))
     fi
     
@@ -130,7 +123,7 @@ EOF
         ((issues++))
     fi
     
-    # 5. Cursor URL 테스트
+    # 5. Cursor URL 테스트 (여러 DNS 서버 사용)
     log_info "Cursor URL 테스트 중..."
     local cursor_urls=(
         "download.cursor.sh"
@@ -141,12 +134,13 @@ EOF
     
     local working_urls=0
     for url in "${cursor_urls[@]}"; do
-        if nslookup "$url" &>/dev/null; then
-            log_success "URL 해석 성공: $url"
-            ((working_urls++))
-        else
-            log_warning "URL 해석 실패: $url"
-        fi
+        for dns in "${dns_servers[@]}"; do
+            if nslookup "$url" "$dns" &>/dev/null; then
+                log_success "URL 해석 성공: $url (DNS: $dns)"
+                ((working_urls++))
+                break
+            fi
+        done
     done
     
     if [ $working_urls -eq 0 ]; then
@@ -161,35 +155,17 @@ EOF
 fix_network_issues() {
     log_info "네트워크 문제 해결 중..."
     
-    # 1. DNS 서버 설정 (다중 DNS)
-    log_info "DNS 서버 설정 중..."
+    # 1. DNS 서버 환경 변수 설정
+    log_info "DNS 서버 환경 변수 설정 중..."
     
-    # 기존 DNS 설정 백업
-    if [ -f /etc/resolv.conf ]; then
-        cp /etc/resolv.conf /etc/resolv.conf.backup
-        log_info "기존 DNS 설정 백업됨"
-    fi
+    # 환경 변수로 DNS 설정
+    export DNS_SERVERS="8.8.8.8 8.8.4.4 1.1.1.1 1.0.0.1 208.67.222.222 208.67.220.220 9.9.9.9 149.112.112.112"
+    export DNS1="8.8.8.8"
+    export DNS2="1.1.1.1"
+    export DNS3="208.67.222.222"
+    export DNS4="9.9.9.9"
     
-    # 새로운 DNS 설정
-    cat > /etc/resolv.conf << 'EOF'
-# Google DNS
-nameserver 8.8.8.8
-nameserver 8.8.4.4
-
-# Cloudflare DNS
-nameserver 1.1.1.1
-nameserver 1.0.0.1
-
-# OpenDNS
-nameserver 208.67.222.222
-nameserver 208.67.220.220
-
-# Quad9 DNS
-nameserver 9.9.9.9
-nameserver 149.112.112.112
-EOF
-
-    log_success "DNS 서버 설정 완료"
+    log_success "DNS 서버 환경 변수 설정 완료"
     
     # 2. 네트워크 재시작 시도
     log_info "네트워크 재시작 시도 중..."
@@ -201,24 +177,35 @@ EOF
     # 잠시 대기
     sleep 2
     
-    # 3. 네트워크 연결 재확인
+    # 3. 네트워크 연결 재확인 (여러 DNS 서버 사용)
     log_info "네트워크 연결 재확인 중..."
     
     local retry_count=0
     local max_retries=5
+    local dns_servers=("8.8.8.8" "1.1.1.1" "208.67.222.222" "9.9.9.9")
+    local connection_success=false
     
-    while [ $retry_count -lt $max_retries ]; do
-        if ping -c 1 8.8.8.8 &>/dev/null; then
-            log_success "네트워크 연결 복구됨"
-            break
-        else
+    while [ $retry_count -lt $max_retries ] && [ "$connection_success" = false ]; do
+        log_info "재시도 $((retry_count + 1))/$max_retries"
+        
+        for dns in "${dns_servers[@]}"; do
+            if ping -c 1 "$dns" &>/dev/null; then
+                log_success "네트워크 연결 복구됨 (DNS: $dns)"
+                connection_success=true
+                break
+            fi
+        done
+        
+        if [ "$connection_success" = false ]; then
             ((retry_count++))
-            log_warning "네트워크 연결 재시도 $retry_count/$max_retries"
-            sleep 3
+            if [ $retry_count -lt $max_retries ]; then
+                log_warning "네트워크 연결 재시도 $retry_count/$max_retries"
+                sleep 3
+            fi
         fi
     done
     
-    if [ $retry_count -eq $max_retries ]; then
+    if [ "$connection_success" = false ]; then
         log_error "네트워크 연결 복구 실패"
         return 1
     fi
