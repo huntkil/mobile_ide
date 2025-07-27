@@ -130,6 +130,10 @@ setup_ubuntu() {
     proot-distro login ubuntu --shared-tmp -- apt-get update
     proot-distro login ubuntu --shared-tmp -- apt-get install -y \
         xvfb \
+        tigervnc-standalone-server \
+        tigervnc-common \
+        x11-xserver-utils \
+        x11-apps \
         libnss3 \
         libgtk-3-0t64 \
         libasound2t64 \
@@ -178,10 +182,12 @@ create_launchers() {
     log_info "Creating independent startup script (start.sh) inside Ubuntu..."
     cat > "$UBUNTU_HOME/home/cursor-ide/start.sh" << 'EOF'
 #!/bin/bash
-# Self-contained startup script inside Ubuntu - v3.0.0
+# Self-contained startup script inside Ubuntu - v3.1.0 (with VNC support)
+
+echo "[INFO] Cursor AI 시작 중... (VNC 지원)"
 
 # 1. Environment Setup
-export DISPLAY=:0
+export DISPLAY=:1
 export XDG_RUNTIME_DIR="/tmp/runtime-cursor-$(id -u)"
 export NO_AT_BRIDGE=1
 export ELECTRON_DISABLE_SECURITY_WARNINGS=1
@@ -190,18 +196,42 @@ export ELECTRON_DISABLE_SECURITY_WARNINGS=1
 mkdir -p "$XDG_RUNTIME_DIR"
 chmod 700 "$XDG_RUNTIME_DIR"
 
-# 3. Start Xvfb
+# 3. VNC 서버 시작 (GUI 화면 표시용)
+echo "[INFO] VNC 서버 시작 중..."
+if ! pgrep -x "Xtigervnc" > /dev/null; then
+    # VNC 서버 설정
+    mkdir -p ~/.vnc
+    echo "cursor123" | vncpasswd -f > ~/.vnc/passwd
+    chmod 600 ~/.vnc/passwd
+    
+    # VNC 서버 시작 (해상도: 1024x768, 색상 깊이: 24bit)
+    vncserver :1 -geometry 1024x768 -depth 24 -localhost no &
+    VNC_PID=$!
+    sleep 5
+    
+    echo "[SUCCESS] VNC 서버가 시작되었습니다!"
+    echo "[INFO] VNC 접속 정보:"
+    echo "  - 주소: localhost:5901"
+    echo "  - 비밀번호: cursor123"
+    echo "[INFO] Android VNC Viewer 앱으로 접속하세요!"
+else
+    echo "[INFO] VNC 서버가 이미 실행 중입니다."
+    VNC_PID=$(pgrep -x "Xtigervnc")
+fi
+
+# 4. 추가 Xvfb도 시작 (백업용)
 if ! pgrep -x "Xvfb" > /dev/null; then
     Xvfb :0 -screen 0 800x600x16 -ac +extension GLX +render -noreset &
     XVFB_PID=$!
-    sleep 3
+    sleep 2
 else
     XVFB_PID=$(pgrep -x "Xvfb")
 fi
 
-# 4. Execute Cursor AI
+# 5. Execute Cursor AI
 cd /home/cursor-ide
 if [ -f "./squashfs-root/AppRun" ]; then
+    echo "[INFO] Cursor AI 실행 중..."
     
     # All flags to mitigate system service and memory issues
     CURSOR_FLAGS=(
@@ -216,23 +246,32 @@ if [ -f "./squashfs-root/AppRun" ]; then
         --memory-pressure-off
     )
     
-    # Execute silently
-    ./squashfs-root/AppRun "${CURSOR_FLAGS[@]}" "$@" > /dev/null 2>&1 &
+    # Execute in background
+    ./squashfs-root/AppRun "${CURSOR_FLAGS[@]}" "$@" &
     CURSOR_PID=$!
     
-    # Wait for Cursor to fully start
-    sleep 5
+    echo "[SUCCESS] Cursor AI가 시작되었습니다!"
+    echo "[INFO] VNC Viewer로 localhost:5901에 접속하여 화면을 확인하세요."
     
-    # Wait for Cursor process to finish
+    # Wait for Cursor process
     wait $CURSOR_PID 2>/dev/null || true
+else
+    echo "[ERROR] AppRun을 찾을 수 없습니다!"
+    exit 1
 fi
 
-# 5. Cleanup Xvfb
+# 6. Cleanup
+echo "[INFO] 정리 중..."
 if [ -n "$XVFB_PID" ]; then
     kill "$XVFB_PID" 2>/dev/null || true
 fi
+if [ -n "$VNC_PID" ]; then
+    vncserver -kill :1 2>/dev/null || true
+fi
+
+echo "[INFO] Cursor AI 종료됨."
 EOF
-    chmod +x "$UBUNTU_HOME/home/cursor-ide/start.sh"
+     chmod +x "$UBUNTU_HOME/home/cursor-ide/start.sh"
 
     # --- Create the simple launch.sh in Termux ---
     mkdir -p "$CURSOR_DIR"
@@ -257,14 +296,45 @@ EOF
 
     cat > "$CURSOR_DIR/debug.sh" << 'EOF'
 #!/bin/bash
-echo "--- System Diagnostics ---"
+echo "=== 시스템 진단 (상세) ==="
+echo "날짜: $(date)"
+echo ""
+
+echo "--- 1. Termux 환경 ---"
+echo "TERMUX_VERSION: ${TERMUX_VERSION:-'Not set'}"
+echo "Android 버전: $(getprop ro.build.version.release 2>/dev/null || echo 'Unknown')"
+echo "아키텍처: $(uname -m)"
+echo ""
+
+echo "--- 2. 메모리 상태 ---"
+free -h
+echo ""
+
+echo "--- 3. proot-distro 상태 ---"
+proot-distro list 2>/dev/null || echo "proot-distro 오류"
+echo ""
+
+echo "--- 4. Ubuntu 환경 내부 상태 ---"
 proot-distro login ubuntu -- bash -c '
-    echo "--- Inside Ubuntu ---"
+    echo "--- Ubuntu 내부 ---"
     ls -la /home/cursor-ide
-    echo "--- Xvfb Status ---"
-    pgrep -a "Xvfb" || echo "Xvfb not running."
-    echo "--- Memory ---"
-    free -h
+    echo ""
+    echo "--- Xvfb 프로세스 ---"
+    pgrep -a "Xvfb" || echo "Xvfb 실행되지 않음"
+    echo ""
+    echo "--- Cursor AI 프로세스 ---"
+    pgrep -a "AppRun\|cursor" || echo "Cursor AI 실행되지 않음"
+    echo ""
+    echo "--- 디스플레이 환경 변수 ---"
+    echo "DISPLAY: ${DISPLAY:-Not set}"
+    echo "XDG_RUNTIME_DIR: ${XDG_RUNTIME_DIR:-Not set}"
+    echo ""
+    echo "--- X11 테스트 ---"
+    if command -v xdpyinfo >/dev/null 2>&1; then
+        xdpyinfo 2>/dev/null || echo "X11 디스플레이 접근 불가"
+    else
+        echo "xdpyinfo 명령어 없음 (X11 도구 미설치)"
+    fi
 '
 EOF
     chmod +x "$CURSOR_DIR/debug.sh"
