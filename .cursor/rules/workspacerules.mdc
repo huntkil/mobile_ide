@@ -1,278 +1,212 @@
-# Cursor AI Workspace Rules - Galaxy Android IDE Project (v3.1.0)
+# Mobile IDE Development Rules
 
-## Project Overview
-This project aims to create a solution for running Cursor AI IDE on Samsung Galaxy Android devices through multiple implementation approaches including Termux-based Linux environment, React Native app, PWA, and Cordova hybrid app. **v3.1.0 introduces comprehensive solutions for storage optimization, VNC server integration, and network/permission issues.**
+## Code Style and Naming Conventions
 
-## Code Style & Standards
+### General Rules
+- Use descriptive, self-documenting variable and function names
+- Follow consistent indentation (2 spaces for shell scripts, 4 for other languages)
+- Add comprehensive comments for complex logic
+- Use meaningful commit messages following conventional commit format
 
-### General Guidelines
-- Use TypeScript for all JavaScript/TypeScript files
-- Follow ESLint and Prettier configurations
-- Implement comprehensive error handling with try-catch blocks
-- Add detailed JSDoc comments for all functions and classes
-- Use semantic versioning for releases
-- Maintain consistent indentation (2 spaces)
-- **NEW**: Include storage optimization checks in all scripts
-- **NEW**: Implement VNC server fallback mechanisms
-- **NEW**: Add network resilience with multiple DNS servers
+### File Naming
+- Scripts: `descriptive_name_v{version}.sh` (e.g., `complete_fresh_start.sh`)
+- Documentation: `UPPERCASE_DESCRIPTION.md` (e.g., `ERROR_RESOLUTION_HISTORY.md`)
+- Configuration: `config_*.json` or `*.conf`
 
-### File Naming Conventions
-- Use kebab-case for file names: `cursor-ide-launcher.ts`
-- Use PascalCase for React components: `CodeEditor.tsx`
-- Use camelCase for utility functions: `setupEnvironment.js`
-- Use UPPER_CASE for constants: `API_ENDPOINTS.ts`
-- **NEW**: Use descriptive prefixes for script types: `termux_`, `vnc_`, `cleanup_`
+## Directory Structure
 
-### Directory Structure
 ```
-project-root/
-├── src/
-│   ├── components/     # React/React Native components
-│   ├── services/      # API and business logic
-│   ├── utils/         # Helper functions
-│   ├── types/         # TypeScript type definitions
-│   └── config/        # Configuration files
-├── scripts/           # Shell scripts for Termux setup
-│   ├── termux_local_setup.sh    # Main installation script (v3.1.0)
-│   ├── cleanup.sh               # Storage optimization (NEW)
-│   └── vnc_setup.sh            # VNC server configuration (NEW)
-├── backend/           # Node.js server code
-├── docs/             # Documentation (Updated with v3.1.0 features)
-└── tests/            # Test files
+mobile_ide/
+├── scripts/           # All shell scripts
+├── docs/             # Documentation
+├── config/           # Configuration files
+├── tests/            # Test files
+└── .cursor/rules/    # Development rules
 ```
 
 ## Implementation Standards
 
-### Android/Termux Scripts
-- Always check for required dependencies before installation
-- Implement rollback mechanisms for failed installations
-- Use proper error codes and logging
-- Test on multiple Android versions (7.0+)
-- Optimize for ARM64 architecture
-- Include memory and battery optimization
-- **NEW**: Implement storage space checks before major operations
-- **NEW**: Provide external storage fallback mechanisms
-- **NEW**: Include VNC server setup for GUI display
-- **NEW**: Add network resilience with offline capabilities
-
-### Storage Optimization Standards (v3.1.0)
-- Check available storage space before installations
-- Implement automatic cleanup mechanisms
-- Provide external storage utilization options
-- Include cache and temporary file management
-- Monitor storage usage during operations
-
-```bash
-# Storage check template
-check_storage_space() {
-    local required_space_gb=$1
-    local available_space=$(df / | awk 'NR==2{printf "%.0f", $4/1024/1024}')
-    
-    if [ "$available_space" -lt "$required_space_gb" ]; then
-        log_warning "Insufficient storage space. Running cleanup..."
-        ./cleanup.sh
-        return 1
-    fi
-    return 0
-}
-```
-
-### VNC Server Integration (v3.1.0)
-- Implement multiple VNC server options (tigervnc, x11vnc, tightvncserver)
-- Provide fallback mechanisms when VNC packages are unavailable
-- Include headless mode for systems without VNC support
-- Optimize VNC settings for mobile devices
-
-```bash
-# VNC server setup template
-setup_vnc_server() {
-    local vnc_packages=("tigervnc" "x11vnc" "tightvncserver")
-    
-    for package in "${vnc_packages[@]}"; do
-        if pkg install "$package" 2>/dev/null; then
-            log_success "VNC server installed: $package"
-            return 0
-        fi
-    done
-    
-    log_warning "No VNC packages available. Using headless mode."
-    return 1
-}
-```
-
-### Network Resilience Standards (v3.1.0)
-- Implement multiple DNS servers for reliability
-- Provide offline installation capabilities using local files
-- Include network connectivity checks before downloads
-- Add retry mechanisms with exponential backoff
-
-```bash
-# Network setup template
-setup_network_resilience() {
-    # Multiple DNS servers
-    cat > /etc/resolv.conf << EOF
-nameserver 8.8.8.8
-nameserver 8.8.4.4
-nameserver 1.1.1.1
-nameserver 208.67.222.222
-EOF
-    
-    # Test connectivity
-    for dns in "8.8.8.8" "google.com"; do
-        if ping -c 1 "$dns" &>/dev/null; then
-            return 0
-        fi
-    done
-    
-    log_warning "Network connectivity issues detected"
-    return 1
-}
-```
-
-## Error Handling & Recovery (Enhanced v3.1.0)
-
-### Comprehensive Error Classification
-- **STORAGE-001**: Storage space insufficient
-- **DISPLAY-001**: GUI display issues
-- **NETWORK-001**: DNS resolution failures
-- **PERMISSION-001**: External storage permission issues
-- **PACKAGE-001**: Missing package dependencies
-- **SCRIPT-002**: Script syntax errors
-
-### Error Recovery Protocols
-```bash
-# Enhanced error handler template
-handle_error() {
-    local error_code=$1
-    local error_message="$2"
-    
-    case "$error_code" in
-        "STORAGE-001")
-            log_error "Storage space insufficient: $error_message"
-            ./cleanup.sh
-            check_external_storage
-            ;;
-        "DISPLAY-001")
-            log_error "GUI display issue: $error_message"
-            setup_vnc_server
-            setup_headless_mode
-            ;;
-        "NETWORK-001")
-            log_error "Network issue: $error_message"
-            setup_network_resilience
-            use_offline_installation
-            ;;
-        *)
-            log_error "Unknown error: $error_code - $error_message"
-            ;;
-    esac
-}
-```
-
-### Monitoring and Observability (Enhanced)
-- Implement comprehensive logging with storage usage tracking
-- Monitor VNC server status and performance
-- Track network connectivity and DNS resolution times
-- Add storage cleanup scheduling
-- Include performance metrics for mobile optimization
-
-```bash
-# Enhanced monitoring template
-monitor_system_health() {
-    # Storage monitoring
-    local storage_usage=$(df / | awk 'NR==2{print $5}' | sed 's/%//')
-    if [ "$storage_usage" -gt 85 ]; then
-        log_warning "Storage usage high: ${storage_usage}%"
-        ./cleanup.sh
-    fi
-    
-    # VNC server monitoring
-    if ! pgrep -x "Xtigervnc\|x11vnc" > /dev/null; then
-        log_warning "VNC server not running"
-        setup_vnc_server
-    fi
-    
-    # Network monitoring
-    if ! ping -c 1 8.8.8.8 &>/dev/null; then
-        log_warning "Network connectivity issues"
-        setup_network_resilience
-    fi
-}
-```
-
-## Mobile-Specific Optimizations (Enhanced)
-
 ### Storage Management
-- Implement intelligent caching strategies
-- Use external storage for large files when possible
-- Provide automatic cleanup scheduling
-- Monitor and alert on low storage conditions
+- Always check available storage before operations
+- Implement cleanup procedures for temporary files
+- Use external storage when internal storage is insufficient
+- Monitor storage usage during large operations
 
-### VNC Display Optimization
-- Optimize VNC resolution for mobile screens (1024x768)
-- Use appropriate color depth (24-bit) for quality/performance balance
-- Implement touch gesture mapping for VNC viewers
-- Provide mobile-friendly VNC client recommendations
+### VNC and Display Management
+- **CRITICAL**: Always use AppImage extraction instead of direct mounting
+- **CRITICAL**: Use native execution instead of proot environment for Cursor AI
+- Implement proper VNC server configuration with window managers
+- Set appropriate display resolution and color depth
+- Handle VNC password management securely
 
-### Battery and Performance
-- Implement CPU frequency scaling awareness
-- Use memory-efficient Electron flags
-- Optimize X11 server settings for mobile
-- Provide power management integration
+### Network Resilience
+- Implement multiple DNS server fallbacks
+- Use environment variables for DNS configuration instead of system files
+- Test network connectivity before download operations
+- Provide local file alternatives for network-dependent operations
 
-## Documentation Standards (Updated v3.1.0)
+### Error Handling and Recovery
+- **CRITICAL**: Never use `set -e` in scripts - it causes premature termination
+- Implement comprehensive error handling with `|| log_warning` and `|| log_error`
+- Use `safe_run` function for critical operations
+- Add permission checks before system operations
+- Implement graceful degradation for non-critical failures
+
+### Process Management
+- **CRITICAL**: Use `ps aux | grep | awk | xargs kill -9` instead of `pkill`
+- Implement proper process cleanup before starting new services
+- Monitor process status and provide detailed logging
+- Handle zombie processes and resource cleanup
+
+## Mobile Optimizations
+
+### Performance
+- Optimize memory usage (max-old-space-size=512 for Cursor AI)
+- Implement caching strategies for expensive operations
+- Use background processes for long-running tasks
+- Monitor and log performance metrics
+
+### Battery and Resource Management
+- Minimize CPU-intensive operations
+- Implement efficient file I/O patterns
+- Use appropriate compression for large files
+- Monitor battery usage and thermal management
+
+## Documentation Standards
 
 ### Code Documentation
-- Document all storage optimization techniques
-- Include VNC server setup procedures
-- Provide network troubleshooting guides
-- Document mobile-specific optimizations
-- Include performance benchmarking results
+- Document all configuration options and environment requirements
+- Provide usage examples and integration instructions
+- Include troubleshooting guides for common issues
+- Maintain changelogs for all significant changes
 
-### User Documentation
-- Create comprehensive troubleshooting guides for new error types
-- Include VNC client setup instructions for Android
-- Provide storage management best practices
-- Document offline installation procedures
-- Include mobile usage optimization tips
+### Error Documentation
+- **CRITICAL**: Document all encountered errors and their solutions
+- Categorize errors by type (environment, network, permission, etc.)
+- Provide step-by-step resolution procedures
+- Include prevention strategies for common issues
 
-## Quality Assurance (Enhanced)
+## Quality Assurance
 
-### Testing Requirements
-- Test storage optimization on devices with limited space
-- Verify VNC server functionality across different Android versions
-- Test network resilience under various connectivity conditions
-- Validate external storage permission handling
-- Test headless mode functionality
+### Testing
+- Test all scripts in both Termux and WSL environments
+- Verify network connectivity and DNS resolution
+- Test VNC server functionality and display rendering
+- Validate Cursor AI execution and GUI display
 
-### Performance Testing
-- Benchmark storage cleanup efficiency
-- Measure VNC server latency and responsiveness
-- Test memory usage with various optimization flags
-- Validate battery consumption under different usage patterns
-- Test startup times with storage constraints
+### Validation
+- Implement comprehensive error checking
+- Verify file permissions and access rights
+- Test process management and cleanup procedures
+- Validate configuration file syntax and settings
 
-## Security Considerations (Enhanced)
+## Security Considerations
 
-### Storage Security
-- Implement secure cleanup that doesn't expose sensitive data
-- Validate external storage permissions properly
-- Ensure VNC server uses secure authentication
-- Protect against unauthorized access to stored files
+### File Permissions
+- Set appropriate permissions for sensitive files (600 for VNC passwords)
+- Implement secure password management
+- Protect configuration files from unauthorized access
+- Use secure file transfer methods
 
 ### Network Security
-- Use secure DNS servers (DNS over HTTPS when available)
-- Validate downloaded files for integrity
-- Implement secure VNC connections when possible
-- Protect against network-based attacks
+- Implement secure VNC connections
+- Use appropriate authentication methods
+- Protect against unauthorized access
+- Implement proper firewall rules
 
----
+## Development Workflow
 
-**Version**: 3.1.0  
-**Last Updated**: 2025-07-27  
-**Key Enhancements**: Storage optimization, VNC server integration, network resilience, comprehensive error handling
+### Version Control
+- Use meaningful commit messages with conventional format
+- Implement feature branches for significant changes
+- Maintain clean git history with logical progression
+- Document all major changes and their rationale
 
-**Note**: These enhanced rules incorporate all lessons learned from resolving storage, display, network, and permission issues encountered during v3.1.0 development. All team members must follow these updated guidelines to ensure robust mobile IDE functionality.
----
+### Deployment
+- Test all changes in development environment first
+- Implement rollback procedures for failed deployments
+- Monitor deployment success and failure rates
+- Provide clear deployment instructions
 
-**Note**: These rules should be reviewed and updated regularly as the project evolves. All team members must follow these guidelines to ensure code consistency and project success.
+## Critical Lessons Learned
+
+### Environment-Specific Issues
+1. **Termux vs WSL**: Always distinguish between environments
+2. **FUSE Problems**: Use AppImage extraction instead of mounting
+3. **proot Limitations**: Use native execution for GUI applications
+4. **Permission Issues**: Always check permissions before system operations
+
+### Script Stability
+1. **Avoid `set -e`**: It causes premature script termination
+2. **Process Management**: Use robust process termination methods
+3. **Error Handling**: Implement comprehensive error recovery
+4. **Logging**: Provide detailed logging for debugging
+
+### Network and Download Issues
+1. **DNS Problems**: Use multiple DNS servers and environment variables
+2. **Download Failures**: Provide local file alternatives
+3. **Network Testing**: Always test connectivity before operations
+4. **Fallback Strategies**: Implement multiple resolution methods
+
+### GUI and Display Issues
+1. **VNC Configuration**: Proper window manager setup is essential
+2. **X11 Environment**: Complete environment variable setup required
+3. **Display Resolution**: Appropriate resolution and color depth settings
+4. **Process Persistence**: Ensure GUI applications remain running
+
+## Best Practices Summary
+
+### For New Scripts
+1. Start with error handling framework
+2. Implement permission checks
+3. Use robust process management
+4. Provide comprehensive logging
+5. Test in multiple environments
+
+### For Problem Resolution
+1. Identify error category (environment, network, permission, etc.)
+2. Check error resolution history
+3. Implement proven solutions
+4. Document new solutions
+5. Update rules and documentation
+
+### For Maintenance
+1. Regular testing of all scripts
+2. Update documentation with new findings
+3. Monitor for new error patterns
+4. Implement preventive measures
+5. Maintain clean and organized codebase
+
+## Emergency Procedures
+
+### Critical Failures
+1. **Script Termination**: Check for `set -e` and remove it
+2. **Process Hanging**: Use robust termination methods
+3. **Permission Denied**: Implement permission checks
+4. **Network Issues**: Use fallback DNS and local files
+
+### Recovery Steps
+1. **Complete Fresh Start**: Use `complete_fresh_start.sh`
+2. **AppImage Extraction**: Always extract instead of mounting
+3. **Native Execution**: Use native execution for GUI apps
+4. **Environment Reset**: Clear and reconfigure environment
+
+## Future Considerations
+
+### Scalability
+- Design for multiple device types
+- Implement modular architecture
+- Consider performance optimization
+- Plan for feature expansion
+
+### Maintenance
+- Regular dependency updates
+- Security patch management
+- Performance monitoring
+- User feedback integration
+
+### Documentation
+- Keep error resolution history updated
+- Maintain comprehensive troubleshooting guides
+- Update best practices regularly
+- Document new findings and solutions
